@@ -18,9 +18,73 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogClose
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { useToast } from "@/hooks/use-toast";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Plus, Edit, Trash2, Folder, Search } from "lucide-react";
 
-const subcategories = [
+// Define form schema
+const subcategoryFormSchema = z.object({
+  name: z.string().min(2, "Subcategory name must be at least 2 characters"),
+  slug: z.string().min(2, "Slug must be at least 2 characters"),
+  categoryId: z.string().min(1, "Please select a parent category"),
+  status: z.enum(["Active", "Inactive"])
+});
+
+type SubcategoryFormValues = z.infer<typeof subcategoryFormSchema>;
+
+// Category for selection
+interface Category {
+  id: number;
+  name: string;
+}
+
+// Subcategory type definition
+interface Subcategory {
+  id: number;
+  name: string;
+  slug: string;
+  categoryId: number;
+  categoryName: string;
+  products: number;
+  status: "Active" | "Inactive";
+}
+
+const categories: Category[] = [
+  { id: 1, name: "Electronics" },
+  { id: 2, name: "Clothing" },
+  { id: 3, name: "Home & Garden" }
+];
+
+const initialSubcategories: Subcategory[] = [
   {
     id: 1,
     name: "Smartphones",
@@ -88,6 +152,12 @@ const subcategories = [
 
 export default function Subcategories() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [subcategories, setSubcategories] = useState<Subcategory[]>(initialSubcategories);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedSubcategory, setSelectedSubcategory] = useState<Subcategory | null>(null);
+  const { toast } = useToast();
 
   const filteredSubcategories = searchTerm 
     ? subcategories.filter(subcategory => 
@@ -95,6 +165,123 @@ export default function Subcategories() {
         subcategory.categoryName.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : subcategories;
+
+  // Form for creating and updating subcategories
+  const form = useForm<SubcategoryFormValues>({
+    resolver: zodResolver(subcategoryFormSchema),
+    defaultValues: {
+      name: "",
+      slug: "",
+      categoryId: "",
+      status: "Active"
+    },
+  });
+
+  // Handle subcategory creation
+  const handleCreateSubcategory = (values: SubcategoryFormValues) => {
+    const categoryId = parseInt(values.categoryId);
+    const category = categories.find(c => c.id === categoryId);
+    
+    if (!category) {
+      toast({
+        title: "Error",
+        description: "Selected category not found.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const newSubcategory: Subcategory = {
+      id: subcategories.length > 0 ? Math.max(...subcategories.map(s => s.id)) + 1 : 1,
+      name: values.name,
+      slug: values.slug,
+      categoryId: categoryId,
+      categoryName: category.name,
+      products: 0,
+      status: values.status
+    };
+    
+    setSubcategories([...subcategories, newSubcategory]);
+    setIsCreateDialogOpen(false);
+    form.reset();
+    
+    toast({
+      title: "Subcategory created",
+      description: `${newSubcategory.name} has been added successfully.`,
+    });
+  };
+
+  // Handle subcategory update
+  const handleUpdateSubcategory = (values: SubcategoryFormValues) => {
+    if (!selectedSubcategory) return;
+    
+    const categoryId = parseInt(values.categoryId);
+    const category = categories.find(c => c.id === categoryId);
+    
+    if (!category) {
+      toast({
+        title: "Error",
+        description: "Selected category not found.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const updatedSubcategories = subcategories.map(subcategory => 
+      subcategory.id === selectedSubcategory.id 
+        ? { 
+            ...subcategory, 
+            name: values.name, 
+            slug: values.slug,
+            categoryId: categoryId,
+            categoryName: category.name,
+            status: values.status 
+          }
+        : subcategory
+    );
+    
+    setSubcategories(updatedSubcategories);
+    setIsUpdateDialogOpen(false);
+    form.reset();
+    
+    toast({
+      title: "Subcategory updated",
+      description: `${values.name} has been updated successfully.`,
+    });
+  };
+
+  // Handle subcategory deletion
+  const handleDeleteSubcategory = () => {
+    if (!selectedSubcategory) return;
+    
+    const updatedSubcategories = subcategories.filter(subcategory => subcategory.id !== selectedSubcategory.id);
+    setSubcategories(updatedSubcategories);
+    setIsDeleteDialogOpen(false);
+    
+    toast({
+      title: "Subcategory deleted",
+      description: `${selectedSubcategory.name} has been deleted successfully.`,
+      variant: "destructive",
+    });
+  };
+
+  // Open update dialog and populate form
+  const openUpdateDialog = (subcategory: Subcategory) => {
+    setSelectedSubcategory(subcategory);
+    form.reset({
+      name: subcategory.name,
+      slug: subcategory.slug,
+      categoryId: subcategory.categoryId.toString(),
+      status: subcategory.status
+    });
+    setIsUpdateDialogOpen(true);
+  };
+
+  // Open delete dialog
+  const openDeleteDialog = (subcategory: Subcategory) => {
+    setSelectedSubcategory(subcategory);
+    setIsDeleteDialogOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -105,7 +292,10 @@ export default function Subcategories() {
             Manage your product subcategories
           </p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2" onClick={() => {
+          form.reset({name: "", slug: "", categoryId: "", status: "Active"});
+          setIsCreateDialogOpen(true);
+        }}>
           <Plus className="h-4 w-4" />
           <span>Add Subcategory</span>
         </Button>
@@ -161,11 +351,19 @@ export default function Subcategories() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => openUpdateDialog(subcategory)}
+                        >
                           <Edit className="h-4 w-4" />
                           <span className="sr-only">Edit</span>
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => openDeleteDialog(subcategory)}
+                        >
                           <Trash2 className="h-4 w-4" />
                           <span className="sr-only">Delete</span>
                         </Button>
@@ -178,6 +376,205 @@ export default function Subcategories() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Create Subcategory Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add New Subcategory</DialogTitle>
+            <DialogDescription>
+              Create a new product subcategory.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleCreateSubcategory)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subcategory Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter subcategory name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Slug</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter slug" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="categoryId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Parent Category</FormLabel>
+                    <FormControl>
+                      <select
+                        className="w-full p-2 border rounded-md"
+                        {...field}
+                      >
+                        <option value="">Select a category</option>
+                        {categories.map(category => (
+                          <option key={category.id} value={category.id.toString()}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <FormControl>
+                      <select
+                        className="w-full p-2 border rounded-md"
+                        {...field}
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button type="submit">Create Subcategory</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Update Subcategory Dialog */}
+      <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Subcategory</DialogTitle>
+            <DialogDescription>
+              Update subcategory details.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleUpdateSubcategory)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Subcategory Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter subcategory name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Slug</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter slug" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="categoryId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Parent Category</FormLabel>
+                    <FormControl>
+                      <select
+                        className="w-full p-2 border rounded-md"
+                        {...field}
+                      >
+                        <option value="">Select a category</option>
+                        {categories.map(category => (
+                          <option key={category.id} value={category.id.toString()}>
+                            {category.name}
+                          </option>
+                        ))}
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <FormControl>
+                      <select
+                        className="w-full p-2 border rounded-md"
+                        {...field}
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button type="submit">Update Subcategory</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Subcategory Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the subcategory{" "}
+              <span className="font-semibold">{selectedSubcategory?.name}</span> and remove it from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteSubcategory} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

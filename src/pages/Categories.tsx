@@ -18,9 +18,59 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogClose
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { useToast } from "@/hooks/use-toast";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Plus, Edit, Trash2, FolderOpen, Search } from "lucide-react";
 
-const categories = [
+// Define form schema
+const categoryFormSchema = z.object({
+  name: z.string().min(2, "Category name must be at least 2 characters"),
+  slug: z.string().min(2, "Slug must be at least 2 characters"),
+  status: z.enum(["Active", "Inactive"])
+});
+
+type CategoryFormValues = z.infer<typeof categoryFormSchema>;
+
+// Category type definition
+interface Category {
+  id: number;
+  name: string;
+  slug: string;
+  products: number;
+  subcategories: number;
+  status: "Active" | "Inactive";
+}
+
+const initialCategories: Category[] = [
   {
     id: 1,
     name: "Electronics",
@@ -81,12 +131,101 @@ const categories = [
 
 export default function Categories() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [categories, setCategories] = useState<Category[]>(initialCategories);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const { toast } = useToast();
 
   const filteredCategories = searchTerm 
     ? categories.filter(category => 
         category.name.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : categories;
+
+  // Form for creating and updating categories
+  const form = useForm<CategoryFormValues>({
+    resolver: zodResolver(categoryFormSchema),
+    defaultValues: {
+      name: "",
+      slug: "",
+      status: "Active"
+    },
+  });
+
+  // Handle category creation
+  const handleCreateCategory = (values: CategoryFormValues) => {
+    const newCategory: Category = {
+      id: categories.length > 0 ? Math.max(...categories.map(c => c.id)) + 1 : 1,
+      name: values.name,
+      slug: values.slug,
+      products: 0,
+      subcategories: 0,
+      status: values.status
+    };
+    
+    setCategories([...categories, newCategory]);
+    setIsCreateDialogOpen(false);
+    form.reset();
+    
+    toast({
+      title: "Category created",
+      description: `${newCategory.name} has been added successfully.`,
+    });
+  };
+
+  // Handle category update
+  const handleUpdateCategory = (values: CategoryFormValues) => {
+    if (!selectedCategory) return;
+    
+    const updatedCategories = categories.map(category => 
+      category.id === selectedCategory.id 
+        ? { ...category, name: values.name, slug: values.slug, status: values.status }
+        : category
+    );
+    
+    setCategories(updatedCategories);
+    setIsUpdateDialogOpen(false);
+    form.reset();
+    
+    toast({
+      title: "Category updated",
+      description: `${values.name} has been updated successfully.`,
+    });
+  };
+
+  // Handle category deletion
+  const handleDeleteCategory = () => {
+    if (!selectedCategory) return;
+    
+    const updatedCategories = categories.filter(category => category.id !== selectedCategory.id);
+    setCategories(updatedCategories);
+    setIsDeleteDialogOpen(false);
+    
+    toast({
+      title: "Category deleted",
+      description: `${selectedCategory.name} has been deleted successfully.`,
+      variant: "destructive",
+    });
+  };
+
+  // Open update dialog and populate form
+  const openUpdateDialog = (category: Category) => {
+    setSelectedCategory(category);
+    form.reset({
+      name: category.name,
+      slug: category.slug,
+      status: category.status
+    });
+    setIsUpdateDialogOpen(true);
+  };
+
+  // Open delete dialog
+  const openDeleteDialog = (category: Category) => {
+    setSelectedCategory(category);
+    setIsDeleteDialogOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -97,7 +236,10 @@ export default function Categories() {
             Manage your product categories
           </p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2" onClick={() => {
+          form.reset({name: "", slug: "", status: "Active"});
+          setIsCreateDialogOpen(true);
+        }}>
           <Plus className="h-4 w-4" />
           <span>Add Category</span>
         </Button>
@@ -153,11 +295,19 @@ export default function Categories() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => openUpdateDialog(category)}
+                        >
                           <Edit className="h-4 w-4" />
                           <span className="sr-only">Edit</span>
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => openDeleteDialog(category)}
+                        >
                           <Trash2 className="h-4 w-4" />
                           <span className="sr-only">Delete</span>
                         </Button>
@@ -170,6 +320,159 @@ export default function Categories() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Create Category Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add New Category</DialogTitle>
+            <DialogDescription>
+              Create a new product category.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleCreateCategory)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter category name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Slug</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter slug" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <FormControl>
+                      <select
+                        className="w-full p-2 border rounded-md"
+                        {...field}
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button type="submit">Create Category</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Update Category Dialog */}
+      <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Category</DialogTitle>
+            <DialogDescription>
+              Update category details.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleUpdateCategory)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter category name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Slug</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter slug" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <FormControl>
+                      <select
+                        className="w-full p-2 border rounded-md"
+                        {...field}
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button type="submit">Update Category</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Category Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the category{" "}
+              <span className="font-semibold">{selectedCategory?.name}</span> and remove it from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteCategory} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

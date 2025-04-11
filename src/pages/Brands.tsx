@@ -70,7 +70,7 @@ interface Brand {
 }
 
 // Initial brands data
-const initialBrands = [
+const initialBrands: Brand[] = [
   {
     id: 1,
     name: "Apple",
