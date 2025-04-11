@@ -18,9 +18,59 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogClose
+} from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { useForm } from "react-hook-form";
+import { useToast } from "@/hooks/use-toast";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { Plus, Edit, Trash2, Tag, Search } from "lucide-react";
 
-const brands = [
+// Define form schema
+const brandFormSchema = z.object({
+  name: z.string().min(2, "Brand name must be at least 2 characters"),
+  slug: z.string().min(2, "Slug must be at least 2 characters"),
+  status: z.enum(["Active", "Inactive"])
+});
+
+type BrandFormValues = z.infer<typeof brandFormSchema>;
+
+// Brand type definition
+interface Brand {
+  id: number;
+  name: string;
+  slug: string;
+  products: number;
+  status: "Active" | "Inactive";
+}
+
+// Initial brands data
+const initialBrands = [
   {
     id: 1,
     name: "Apple",
@@ -81,12 +131,100 @@ const brands = [
 
 export default function Brands() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [brands, setBrands] = useState<Brand[]>(initialBrands);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedBrand, setSelectedBrand] = useState<Brand | null>(null);
+  const { toast } = useToast();
 
   const filteredBrands = searchTerm 
     ? brands.filter(brand => 
         brand.name.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : brands;
+
+  // Form for creating and updating brands
+  const form = useForm<BrandFormValues>({
+    resolver: zodResolver(brandFormSchema),
+    defaultValues: {
+      name: "",
+      slug: "",
+      status: "Active"
+    },
+  });
+
+  // Handle brand creation
+  const handleCreateBrand = (values: BrandFormValues) => {
+    const newBrand: Brand = {
+      id: brands.length > 0 ? Math.max(...brands.map(b => b.id)) + 1 : 1,
+      name: values.name,
+      slug: values.slug,
+      products: 0,
+      status: values.status
+    };
+    
+    setBrands([...brands, newBrand]);
+    setIsCreateDialogOpen(false);
+    form.reset();
+    
+    toast({
+      title: "Brand created",
+      description: `${newBrand.name} has been added successfully.`,
+    });
+  };
+
+  // Handle brand update
+  const handleUpdateBrand = (values: BrandFormValues) => {
+    if (!selectedBrand) return;
+    
+    const updatedBrands = brands.map(brand => 
+      brand.id === selectedBrand.id 
+        ? { ...brand, name: values.name, slug: values.slug, status: values.status }
+        : brand
+    );
+    
+    setBrands(updatedBrands);
+    setIsUpdateDialogOpen(false);
+    form.reset();
+    
+    toast({
+      title: "Brand updated",
+      description: `${values.name} has been updated successfully.`,
+    });
+  };
+
+  // Handle brand deletion
+  const handleDeleteBrand = () => {
+    if (!selectedBrand) return;
+    
+    const updatedBrands = brands.filter(brand => brand.id !== selectedBrand.id);
+    setBrands(updatedBrands);
+    setIsDeleteDialogOpen(false);
+    
+    toast({
+      title: "Brand deleted",
+      description: `${selectedBrand.name} has been deleted successfully.`,
+      variant: "destructive",
+    });
+  };
+
+  // Open update dialog and populate form
+  const openUpdateDialog = (brand: Brand) => {
+    setSelectedBrand(brand);
+    form.reset({
+      name: brand.name,
+      slug: brand.slug,
+      status: brand.status
+    });
+    setIsUpdateDialogOpen(true);
+  };
+
+  // Open delete dialog
+  const openDeleteDialog = (brand: Brand) => {
+    setSelectedBrand(brand);
+    setIsDeleteDialogOpen(true);
+  };
 
   return (
     <div className="space-y-6">
@@ -97,7 +235,10 @@ export default function Brands() {
             Manage your product brands
           </p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button className="flex items-center gap-2" onClick={() => {
+          form.reset({name: "", slug: "", status: "Active"});
+          setIsCreateDialogOpen(true);
+        }}>
           <Plus className="h-4 w-4" />
           <span>Add Brand</span>
         </Button>
@@ -151,11 +292,19 @@ export default function Brands() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => openUpdateDialog(brand)}
+                        >
                           <Edit className="h-4 w-4" />
                           <span className="sr-only">Edit</span>
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          onClick={() => openDeleteDialog(brand)}
+                        >
                           <Trash2 className="h-4 w-4" />
                           <span className="sr-only">Delete</span>
                         </Button>
@@ -168,6 +317,159 @@ export default function Brands() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Create Brand Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Add New Brand</DialogTitle>
+            <DialogDescription>
+              Create a new brand for your products.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleCreateBrand)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Brand Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter brand name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Slug</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter slug" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <FormControl>
+                      <select
+                        className="w-full p-2 border rounded-md"
+                        {...field}
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button type="submit">Create Brand</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Update Brand Dialog */}
+      <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Edit Brand</DialogTitle>
+            <DialogDescription>
+              Update brand details.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(handleUpdateBrand)} className="space-y-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Brand Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter brand name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="slug"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Slug</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter slug" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="status"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Status</FormLabel>
+                    <FormControl>
+                      <select
+                        className="w-full p-2 border rounded-md"
+                        {...field}
+                      >
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                      </select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <DialogClose asChild>
+                  <Button variant="outline">Cancel</Button>
+                </DialogClose>
+                <Button type="submit">Update Brand</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Brand Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the brand{" "}
+              <span className="font-semibold">{selectedBrand?.name}</span> and remove it from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteBrand} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
