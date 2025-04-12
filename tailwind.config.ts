@@ -64,8 +64,8 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				ecommerce: {
-					blue: '#1a2b6d',
 					purple: '#6941c6',
+					blue: '#1a2b6d',
 					background: '#f9fafb',
 					success: '#10b981',
 					warning: '#f59e0b',

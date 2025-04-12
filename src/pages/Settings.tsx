@@ -1,5 +1,5 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
@@ -15,8 +15,76 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+
+// Define available accent colors
+const accentColors = [
+  { name: "Purple", value: "#6941c6", class: "bg-[#6941c6]" },
+  { name: "Blue", value: "#0ea5e9", class: "bg-[#0ea5e9]" },
+  { name: "Green", value: "#10b981", class: "bg-[#10b981]" },
+  { name: "Orange", value: "#f97316", class: "bg-[#f97316]" },
+  { name: "Red", value: "#ef4444", class: "bg-[#ef4444]" }
+];
 
 export default function Settings() {
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [selectedAccentColor, setSelectedAccentColor] = useState(accentColors[0].value);
+  const [sidebarPosition, setSidebarPosition] = useState("left");
+  const { toast } = useToast();
+
+  // Handle accent color change
+  const handleAccentColorChange = (colorValue: string) => {
+    setSelectedAccentColor(colorValue);
+    
+    // Update CSS variables
+    document.documentElement.style.setProperty('--primary', colorValue);
+    
+    toast({
+      title: "Appearance updated",
+      description: "Accent color has been changed successfully.",
+    });
+  };
+
+  // Handle appearance settings save
+  const handleSaveAppearance = () => {
+    toast({
+      title: "Appearance saved",
+      description: "Your appearance preferences have been saved.",
+    });
+  };
+
+  // Handle general settings save
+  const handleSaveGeneral = () => {
+    toast({
+      title: "Settings saved",
+      description: "Your store information has been updated successfully.",
+    });
+  };
+
+  // Handle account settings save
+  const handleUpdateAccount = () => {
+    toast({
+      title: "Account updated",
+      description: "Your account information has been updated successfully.",
+    });
+  };
+
+  // Handle notification settings save
+  const handleSaveNotifications = () => {
+    toast({
+      title: "Notifications saved",
+      description: "Your notification preferences have been saved.",
+    });
+  };
+
+  // Handle billing settings save
+  const handleSaveBilling = () => {
+    toast({
+      title: "Billing updated",
+      description: "Your billing information has been updated successfully.",
+    });
+  };
+  
   return (
     <div className="space-y-6">
       <div>
@@ -117,7 +185,7 @@ export default function Settings() {
               </div>
               
               <div className="flex justify-end">
-                <Button>Save Changes</Button>
+                <Button onClick={handleSaveGeneral}>Save Changes</Button>
               </div>
             </CardContent>
           </Card>
@@ -177,7 +245,7 @@ export default function Settings() {
               </div>
               
               <div className="flex justify-end">
-                <Button>Update Account</Button>
+                <Button onClick={handleUpdateAccount}>Update Account</Button>
               </div>
             </CardContent>
           </Card>
@@ -235,7 +303,7 @@ export default function Settings() {
               </div>
               
               <div className="flex justify-end">
-                <Button>Save Preferences</Button>
+                <Button onClick={handleSaveNotifications}>Save Preferences</Button>
               </div>
             </CardContent>
           </Card>
@@ -299,7 +367,7 @@ export default function Settings() {
                 </div>
                 
                 <div className="flex justify-end">
-                  <Button>Save Changes</Button>
+                  <Button onClick={handleSaveBilling}>Save Changes</Button>
                 </div>
               </div>
             </CardContent>
@@ -319,7 +387,7 @@ export default function Settings() {
                     <h3 className="font-medium">Dark Mode</h3>
                     <p className="text-sm text-muted-foreground">Toggle dark mode on/off</p>
                   </div>
-                  <Switch />
+                  <Switch checked={isDarkMode} onCheckedChange={setIsDarkMode} />
                 </div>
                 
                 <Separator />
@@ -328,23 +396,22 @@ export default function Settings() {
                   <h3 className="font-medium">Accent Color</h3>
                   <p className="text-sm text-muted-foreground">Choose your preferred accent color</p>
                   <div className="mt-4 grid grid-cols-5 gap-2">
-                    {["purple", "blue", "green", "orange", "red"].map((color) => (
+                    {accentColors.map((color) => (
                       <div
-                        key={color}
-                        className={`h-10 w-full cursor-pointer rounded-md ${
-                          color === "purple" 
-                            ? "bg-[#6941c6] ring-2 ring-[#6941c6] ring-offset-2" 
-                            : color === "blue" 
-                            ? "bg-blue-600" 
-                            : color === "green" 
-                            ? "bg-green-600" 
-                            : color === "orange" 
-                            ? "bg-orange-500" 
-                            : "bg-red-600"
+                        key={color.value}
+                        className={`h-10 w-full cursor-pointer rounded-md ${color.class} ${
+                          selectedAccentColor === color.value 
+                            ? "ring-2 ring-offset-2" 
+                            : ""
                         }`}
+                        onClick={() => handleAccentColorChange(color.value)}
+                        title={color.name}
                       />
                     ))}
                   </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Selected: {accentColors.find(c => c.value === selectedAccentColor)?.name || "Purple"}
+                  </p>
                 </div>
                 
                 <Separator />
@@ -353,7 +420,7 @@ export default function Settings() {
                   <h3 className="font-medium">Sidebar Position</h3>
                   <p className="text-sm text-muted-foreground">Choose the position of the sidebar</p>
                   <div className="mt-4">
-                    <Select defaultValue="left">
+                    <Select defaultValue={sidebarPosition} onValueChange={setSidebarPosition}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -367,7 +434,7 @@ export default function Settings() {
               </div>
               
               <div className="flex justify-end">
-                <Button>Save Preferences</Button>
+                <Button onClick={handleSaveAppearance}>Save Preferences</Button>
               </div>
             </CardContent>
           </Card>
