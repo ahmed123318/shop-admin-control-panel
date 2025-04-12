@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { 
   Table, 
@@ -204,7 +205,7 @@ export default function Reviews() {
   const handleUpdateReview = (values: ReviewFormValues) => {
     if (!selectedReview) return;
     
-    const product = products.find(p => p.id === parseInt(values.productId));
+    const product = products.find(p => p.id === Number(values.productId));
     
     if (!product) {
       toast({
@@ -222,7 +223,7 @@ export default function Reviews() {
             productId: product.id,
             productName: product.name,
             userName: values.userName,
-            rating: parseInt(values.rating.toString(), 10),
+            rating: Number(values.rating),
             comment: values.comment,
             status: values.status 
           }

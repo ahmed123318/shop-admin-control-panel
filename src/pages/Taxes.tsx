@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { 
   Table, 
@@ -171,7 +172,7 @@ export default function Taxes() {
     const newTax: Tax = {
       id: taxes.length > 0 ? Math.max(...taxes.map(t => t.id)) + 1 : 1,
       name: values.name,
-      rate: parseFloat(values.rate.toString()),
+      rate: Number(values.rate),
       country: values.country,
       region: values.region,
       productCategories: values.productCategories,
@@ -196,7 +197,7 @@ export default function Taxes() {
         ? { 
             ...tax, 
             name: values.name,
-            rate: parseFloat(values.rate.toString()),
+            rate: Number(values.rate),
             country: values.country,
             region: values.region,
             productCategories: values.productCategories,

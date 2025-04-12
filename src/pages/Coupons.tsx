@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { 
   Table, 
@@ -185,9 +186,9 @@ export default function Coupons() {
       id: coupons.length > 0 ? Math.max(...coupons.map(c => c.id)) + 1 : 1,
       code: values.code.toUpperCase(),
       type: values.type,
-      value: parseFloat(values.value.toString()),
-      minPurchase: parseFloat(values.minPurchase.toString()),
-      maxUses: parseInt(values.maxUses.toString(), 10),
+      value: Number(values.value),
+      minPurchase: Number(values.minPurchase),
+      maxUses: Number(values.maxUses),
       usedCount: 0,
       startDate: new Date().toISOString().split('T')[0],
       endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -214,9 +215,9 @@ export default function Coupons() {
             ...coupon, 
             code: values.code.toUpperCase(),
             type: values.type,
-            value: parseFloat(values.value.toString()),
-            minPurchase: parseFloat(values.minPurchase.toString()),
-            maxUses: parseInt(values.maxUses.toString(), 10),
+            value: Number(values.value),
+            minPurchase: Number(values.minPurchase),
+            maxUses: Number(values.maxUses),
             status: values.status 
           }
         : coupon
