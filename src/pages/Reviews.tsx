@@ -8,26 +8,29 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { 
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -36,520 +39,534 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Star, Edit, Trash2, MessageSquare, Search } from "lucide-react";
+import { Star } from "lucide-react";
 
-// Define review form schema with proper conversion to number
-const reviewFormSchema = z.object({
-  productId: z.string().min(1, "Product is required"),
-  userName: z.string().min(2, "User name must be at least 2 characters"),
-  rating: z.string().transform(val => parseInt(val, 10)),
-  comment: z.string().min(5, "Comment must be at least 5 characters"),
-  status: z.enum(["Approved", "Pending", "Rejected"])
-});
+type ReviewStatus = "published" | "pending" | "spam";
 
-type ReviewFormValues = z.infer<typeof reviewFormSchema>;
+interface Review {
+  id: number;
+  productId: number;
+  productName: string;
+  userName: string;
+  rating: number;
+  comment: string;
+  date: string;
+  status: ReviewStatus;
+}
 
-// Product type for selection
 interface Product {
   id: number;
   name: string;
 }
 
-// Review type definition
-interface Review {
-  id: number;
-  productId: number;
-  productName: string;
-  userId: number;
+interface ReviewFormValues {
+  productId: string;
   userName: string;
   rating: number;
   comment: string;
-  status: "Approved" | "Pending" | "Rejected";
-  date: string;
+  status: ReviewStatus;
 }
 
-const products: Product[] = [
-  { id: 1, name: "Apple MacBook Pro" },
-  { id: 2, name: "Samsung Galaxy S22" },
-  { id: 3, name: "Levi's Jeans" },
-  { id: 4, name: "Nike Air Max" },
-  { id: 5, name: "Sony PlayStation 5" },
-  { id: 6, name: "Amazon Echo Dot" }
-];
-
-const initialReviews: Review[] = [
-  {
-    id: 1,
-    productId: 1,
-    productName: "Apple MacBook Pro",
-    userId: 2,
-    userName: "Jane Smith",
-    rating: 5,
-    comment: "Excellent laptop, very fast and reliable.",
-    status: "Approved",
-    date: "2023-12-15"
-  },
-  {
-    id: 2,
-    productId: 3,
-    productName: "Levi's Jeans",
-    userId: 4,
-    userName: "Emily Davis",
-    rating: 4,
-    comment: "Good quality, but a bit tight around the waist.",
-    status: "Approved",
-    date: "2023-12-10"
-  },
-  {
-    id: 3,
-    productId: 2,
-    productName: "Samsung Galaxy S22",
-    userId: 1,
-    userName: "John Doe",
-    rating: 5,
-    comment: "Amazing camera and display quality!",
-    status: "Approved",
-    date: "2023-12-08"
-  },
-  {
-    id: 4,
-    productId: 4,
-    productName: "Nike Air Max",
-    userId: 5,
-    userName: "Michael Wilson",
-    rating: 3,
-    comment: "Comfortable but not very durable.",
-    status: "Approved",
-    date: "2023-12-05"
-  },
-  {
-    id: 5,
-    productId: 6,
-    productName: "Amazon Echo Dot",
-    userId: 3,
-    userName: "Robert Johnson",
-    rating: 2,
-    comment: "Not as responsive as I expected.",
-    status: "Pending",
-    date: "2023-12-03"
-  },
-  {
-    id: 6,
-    productId: 5,
-    productName: "Sony PlayStation 5",
-    userId: 6,
-    userName: "Sarah Brown",
-    rating: 5,
-    comment: "Best gaming console I've ever owned!",
-    status: "Approved",
-    date: "2023-11-28"
-  }
-];
-
 export default function Reviews() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [reviews, setReviews] = useState<Review[]>(initialReviews);
-  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
-  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [reviews, setReviews] = useState<Review[]>([
+    {
+      id: 1,
+      productId: 101,
+      productName: "Wireless Headphones",
+      userName: "John Doe",
+      rating: 5,
+      comment: "These headphones are amazing! Great sound quality and very comfortable to wear for long periods.",
+      date: "2023-04-15",
+      status: "published"
+    },
+    {
+      id: 2,
+      productId: 102,
+      productName: "Smartphone Case",
+      userName: "Jane Smith",
+      rating: 2,
+      comment: "The case didn't fit my phone properly. I'm disappointed with the quality.",
+      date: "2023-05-20",
+      status: "published"
+    },
+    {
+      id: 3,
+      productId: 103,
+      productName: "Bluetooth Speaker",
+      userName: "Mike Johnson",
+      rating: 4,
+      comment: "Good speaker with strong bass. Battery life could be better though.",
+      date: "2023-06-10",
+      status: "pending"
+    }
+  ]);
+  
+  const [products, setProducts] = useState<Product[]>([
+    { id: 101, name: "Wireless Headphones" },
+    { id: 102, name: "Smartphone Case" },
+    { id: 103, name: "Bluetooth Speaker" },
+    { id: 104, name: "Smart Watch" },
+    { id: 105, name: "Laptop Bag" }
+  ]);
+  
+  const [isAddReviewOpen, setIsAddReviewOpen] = useState(false);
+  const [isEditReviewOpen, setIsEditReviewOpen] = useState(false);
   const [selectedReview, setSelectedReview] = useState<Review | null>(null);
+  const [formValues, setFormValues] = useState<ReviewFormValues>({
+    productId: "",
+    userName: "",
+    rating: 5,
+    comment: "",
+    status: "pending"
+  });
+  
   const { toast } = useToast();
-
-  const filteredReviews = searchTerm 
-    ? reviews.filter(review => 
-        review.productName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        review.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        review.comment.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : reviews;
-
-  // Form for updating reviews
-  const form = useForm<ReviewFormValues>({
-    resolver: zodResolver(reviewFormSchema),
-    defaultValues: {
+  
+  const handleOpenAddReview = () => {
+    setFormValues({
       productId: "",
       userName: "",
-      rating: "5",
+      rating: 5,
       comment: "",
-      status: "Pending"
-    },
-  });
-
-  const renderStars = (rating: number) => {
-    return (
-      <div className="flex items-center">
-        {[...Array(5)].map((_, i) => (
-          <Star 
-            key={i} 
-            className={`h-4 w-4 ${i < rating ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}`}
-          />
-        ))}
-      </div>
-    );
+      status: "pending"
+    });
+    setIsAddReviewOpen(true);
   };
-
-  // Handle review update
-  const handleUpdateReview = (values: ReviewFormValues) => {
-    if (!selectedReview) return;
+  
+  const handleOpenEditReview = (review: Review) => {
+    setSelectedReview(review);
+    setFormValues({
+      productId: review.productId.toString(),
+      userName: review.userName,
+      rating: review.rating,
+      comment: review.comment,
+      status: review.status
+    });
+    setIsEditReviewOpen(true);
+  };
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
     
-    const product = products.find(p => p.id === Number(values.productId));
+    if (name === "rating") {
+      setFormValues({
+        ...formValues,
+        [name]: Number(value)
+      });
+    } else {
+      setFormValues({
+        ...formValues,
+        [name]: value
+      });
+    }
+  };
+  
+  const handleSelectChange = (name: string, value: string) => {
+    setFormValues({
+      ...formValues,
+      [name]: value
+    });
+  };
+  
+  const handleAddReview = () => {
+    const product = products.find(p => p.id === Number(formValues.productId));
     
     if (!product) {
       toast({
         title: "Error",
-        description: "Selected product not found.",
-        variant: "destructive",
+        description: "Please select a valid product.",
+        variant: "destructive"
       });
       return;
     }
     
-    const updatedReviews = reviews.map(review => 
+    const newReview: Review = {
+      id: reviews.length > 0 ? Math.max(...reviews.map(r => r.id)) + 1 : 1,
+      productId: product.id,
+      productName: product.name,
+      userName: formValues.userName,
+      rating: Number(formValues.rating),
+      comment: formValues.comment,
+      date: new Date().toISOString().split('T')[0],
+      status: formValues.status
+    };
+    
+    setReviews([...reviews, newReview]);
+    setIsAddReviewOpen(false);
+    
+    toast({
+      title: "Review Added",
+      description: `Review for ${product.name} has been added successfully.`,
+    });
+  };
+  
+  const handleUpdateReview = () => {
+    if (!selectedReview) return;
+    
+    const product = products.find(p => p.id === Number(formValues.productId));
+    
+    if (!product) {
+      toast({
+        title: "Error",
+        description: "Please select a valid product.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    setReviews(reviews.map(review => 
       review.id === selectedReview.id 
         ? { 
             ...review, 
             productId: product.id,
             productName: product.name,
-            userName: values.userName,
-            rating: Number(values.rating),
-            comment: values.comment,
-            status: values.status 
+            userName: formValues.userName,
+            rating: Number(formValues.rating),
+            comment: formValues.comment,
+            status: formValues.status 
           }
         : review
-    );
+    ));
     
-    setReviews(updatedReviews);
-    setIsUpdateDialogOpen(false);
-    form.reset();
+    setIsEditReviewOpen(false);
     
     toast({
-      title: "Review updated",
+      title: "Review Updated",
       description: `Review for ${product.name} has been updated successfully.`,
     });
   };
-
-  // Handle review deletion
-  const handleDeleteReview = () => {
-    if (!selectedReview) return;
-    
-    const updatedReviews = reviews.filter(review => review.id !== selectedReview.id);
-    setReviews(updatedReviews);
-    setIsDeleteDialogOpen(false);
+  
+  const handleDeleteReview = (id: number) => {
+    setReviews(reviews.filter(review => review.id !== id));
     
     toast({
-      title: "Review deleted",
-      description: `Review for ${selectedReview.productName} has been deleted successfully.`,
-      variant: "destructive",
+      title: "Review Deleted",
+      description: "The review has been deleted successfully.",
     });
   };
-
-  // Open view dialog
-  const openViewDialog = (review: Review) => {
-    setSelectedReview(review);
-    setIsViewDialogOpen(true);
+  
+  const getStatusBadgeColor = (status: ReviewStatus) => {
+    switch (status) {
+      case "published":
+        return "bg-green-100 text-green-800 hover:bg-green-100";
+      case "pending":
+        return "bg-yellow-100 text-yellow-800 hover:bg-yellow-100";
+      case "spam":
+        return "bg-red-100 text-red-800 hover:bg-red-100";
+      default:
+        return "";
+    }
   };
 
-  // Open update dialog and populate form
-  const openUpdateDialog = (review: Review) => {
-    setSelectedReview(review);
-    form.reset({
-      productId: review.productId.toString(),
-      userName: review.userName,
-      rating: review.rating.toString(),
-      comment: review.comment,
-      status: review.status
-    });
-    setIsUpdateDialogOpen(true);
-  };
-
-  // Open delete dialog
-  const openDeleteDialog = (review: Review) => {
-    setSelectedReview(review);
-    setIsDeleteDialogOpen(true);
+  const renderStars = (rating: number) => {
+    return Array(5).fill(0).map((_, index) => (
+      <Star 
+        key={index}
+        className={`h-4 w-4 ${index < rating ? "text-yellow-400 fill-yellow-400" : "text-gray-300"}`}
+      />
+    ));
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Reviews</h2>
           <p className="text-muted-foreground">
-            Manage product reviews from customers
+            Manage customer product reviews and feedback
           </p>
         </div>
+        <Button onClick={handleOpenAddReview}>Add New Review</Button>
       </div>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Product Reviews</CardTitle>
-          <CardDescription>
-            Showing {filteredReviews.length} reviews
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="relative max-w-sm">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search reviews..." 
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+      
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Product</TableHead>
+              <TableHead>Rating</TableHead>
+              <TableHead>Customer</TableHead>
+              <TableHead>Comment</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {reviews.map(review => (
+              <TableRow key={review.id}>
+                <TableCell className="font-medium">{review.productName}</TableCell>
+                <TableCell>
+                  <div className="flex items-center">
+                    {renderStars(review.rating)}
+                  </div>
+                </TableCell>
+                <TableCell>{review.userName}</TableCell>
+                <TableCell className="max-w-xs truncate">{review.comment}</TableCell>
+                <TableCell>{review.date}</TableCell>
+                <TableCell>
+                  <Badge className={getStatusBadgeColor(review.status)} variant="outline">
+                    {review.status.charAt(0).toUpperCase() + review.status.slice(1)}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleOpenEditReview(review)}
+                    >
+                      Edit
+                    </Button>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Review</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete this review? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => handleDeleteReview(review.id)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      
+      {/* Add Review Dialog */}
+      <Dialog open={isAddReviewOpen} onOpenChange={setIsAddReviewOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Review</DialogTitle>
+            <DialogDescription>
+              Add a new customer review for a product
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Product</Label>
+              <Select 
+                value={formValues.productId} 
+                onValueChange={(value) => handleSelectChange('productId', value)}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select product" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Products</SelectLabel>
+                    {products.map(product => (
+                      <SelectItem key={product.id} value={product.id.toString()}>
+                        {product.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="userName" className="text-right">
+                Customer Name
+              </Label>
+              <Input
+                id="userName"
+                name="userName"
+                className="col-span-3"
+                value={formValues.userName}
+                onChange={handleInputChange}
               />
             </div>
-          </div>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[80px]">ID</TableHead>
-                  <TableHead>Product</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Rating</TableHead>
-                  <TableHead>Comment</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredReviews.map(review => (
-                  <TableRow key={review.id}>
-                    <TableCell className="font-medium">#{review.id}</TableCell>
-                    <TableCell>{review.productName}</TableCell>
-                    <TableCell>{review.userName}</TableCell>
-                    <TableCell>{renderStars(review.rating)}</TableCell>
-                    <TableCell className="max-w-xs truncate">{review.comment}</TableCell>
-                    <TableCell>{review.date}</TableCell>
-                    <TableCell>
-                      <Badge variant={review.status === "Approved" ? "default" : review.status === "Rejected" ? "destructive" : "secondary"}>
-                        {review.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => openViewDialog(review)}
-                        >
-                          <MessageSquare className="h-4 w-4" />
-                          <span className="sr-only">View</span>
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => openUpdateDialog(review)}
-                        >
-                          <Edit className="h-4 w-4" />
-                          <span className="sr-only">Edit</span>
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => openDeleteDialog(review)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Delete</span>
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* View Review Dialog */}
-      <Dialog open={isViewDialogOpen} onOpenChange={setIsViewDialogOpen}>
-        <DialogContent className="sm:max-w-[550px]">
-          <DialogHeader>
-            <DialogTitle>Review Details</DialogTitle>
-          </DialogHeader>
-          {selectedReview && (
-            <div className="space-y-4">
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Product</h4>
-                <p className="text-base font-medium">{selectedReview.productName}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">User</h4>
-                <p className="text-base font-medium">{selectedReview.userName}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Rating</h4>
-                <div className="mt-1">{renderStars(selectedReview.rating)}</div>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Date</h4>
-                <p className="text-base font-medium">{selectedReview.date}</p>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Status</h4>
-                <Badge variant={selectedReview.status === "Approved" ? "default" : selectedReview.status === "Rejected" ? "destructive" : "secondary"}>
-                  {selectedReview.status}
-                </Badge>
-              </div>
-              <div>
-                <h4 className="text-sm font-medium text-muted-foreground">Comment</h4>
-                <p className="bg-muted/50 p-3 rounded-md mt-1">{selectedReview.comment}</p>
-              </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="rating" className="text-right">
+                Rating (1-5)
+              </Label>
+              <Input
+                id="rating"
+                name="rating"
+                type="number"
+                className="col-span-3"
+                value={formValues.rating}
+                onChange={handleInputChange}
+                min={1}
+                max={5}
+              />
             </div>
-          )}
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="comment" className="text-right">
+                Comment
+              </Label>
+              <Textarea
+                id="comment"
+                name="comment"
+                className="col-span-3"
+                value={formValues.comment}
+                onChange={handleInputChange}
+                rows={4}
+              />
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Status</Label>
+              <Select 
+                value={formValues.status} 
+                onValueChange={(value: ReviewStatus) => handleSelectChange('status', value)}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="published">Published</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="spam">Spam</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
           <DialogFooter>
-            <Button onClick={() => setIsViewDialogOpen(false)}>Close</Button>
+            <Button variant="outline" onClick={() => setIsAddReviewOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddReview}>
+              Add Review
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Update Review Dialog */}
-      <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+      
+      {/* Edit Review Dialog */}
+      <Dialog open={isEditReviewOpen} onOpenChange={setIsEditReviewOpen}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Review</DialogTitle>
             <DialogDescription>
-              Update review details.
+              Update the details of this review
             </DialogDescription>
           </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleUpdateReview)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="productId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Product</FormLabel>
-                    <FormControl>
-                      <select
-                        className="w-full p-2 border rounded-md"
-                        {...field}
-                      >
-                        <option value="">Select a product</option>
-                        {products.map(product => (
-                          <option key={product.id} value={product.id.toString()}>
-                            {product.name}
-                          </option>
-                        ))}
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Product</Label>
+              <Select 
+                value={formValues.productId} 
+                onValueChange={(value) => handleSelectChange('productId', value)}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select product" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectLabel>Products</SelectLabel>
+                    {products.map(product => (
+                      <SelectItem key={product.id} value={product.id.toString()}>
+                        {product.name}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-userName" className="text-right">
+                Customer Name
+              </Label>
+              <Input
+                id="edit-userName"
                 name="userName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>User Name</FormLabel>
-                    <FormControl>
-                      <Input {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                className="col-span-3"
+                value={formValues.userName}
+                onChange={handleInputChange}
               />
-              <FormField
-                control={form.control}
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-rating" className="text-right">
+                Rating (1-5)
+              </Label>
+              <Input
+                id="edit-rating"
                 name="rating"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Rating</FormLabel>
-                    <FormControl>
-                      <select
-                        className="w-full p-2 border rounded-md"
-                        {...field}
-                      >
-                        <option value="1">1 Star</option>
-                        <option value="2">2 Stars</option>
-                        <option value="3">3 Stars</option>
-                        <option value="4">4 Stars</option>
-                        <option value="5">5 Stars</option>
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                type="number"
+                className="col-span-3"
+                value={formValues.rating}
+                onChange={handleInputChange}
+                min={1}
+                max={5}
               />
-              <FormField
-                control={form.control}
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-comment" className="text-right">
+                Comment
+              </Label>
+              <Textarea
+                id="edit-comment"
                 name="comment"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Comment</FormLabel>
-                    <FormControl>
-                      <textarea
-                        className="w-full p-2 border rounded-md min-h-[80px]"
-                        {...field}
-                      ></textarea>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                className="col-span-3"
+                value={formValues.comment}
+                onChange={handleInputChange}
+                rows={4}
               />
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <FormControl>
-                      <select
-                        className="w-full p-2 border rounded-md"
-                        {...field}
-                      >
-                        <option value="Approved">Approved</option>
-                        <option value="Pending">Pending</option>
-                        <option value="Rejected">Rejected</option>
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="outline">Cancel</Button>
-                </DialogClose>
-                <Button type="submit">Update Review</Button>
-              </DialogFooter>
-            </form>
-          </Form>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Status</Label>
+              <Select 
+                value={formValues.status} 
+                onValueChange={(value: ReviewStatus) => handleSelectChange('status', value)}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="published">Published</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="spam">Spam</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditReviewOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateReview}>
+              Update Review
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Delete Review Dialog */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the review for{" "}
-              <span className="font-semibold">{selectedReview?.productName}</span> and remove it from our servers.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteReview} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

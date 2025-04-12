@@ -8,26 +8,28 @@ import {
   TableHeader, 
   TableRow 
 } from "@/components/ui/table";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { 
+import {
   Dialog,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogClose
 } from "@/components/ui/dialog";
 import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { 
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -36,32 +38,11 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Plus, Edit, Trash2, Percent, Search } from "lucide-react";
 
-// Define tax form schema
-const taxFormSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  rate: z.string().transform(val => parseFloat(val)),
-  country: z.string().min(2, "Country must be at least 2 characters"),
-  region: z.string(),
-  productCategories: z.string(),
-  status: z.enum(["Active", "Inactive"])
-});
-
-type TaxFormValues = z.infer<typeof taxFormSchema>;
+type TaxStatus = "active" | "inactive";
 
 interface Tax {
   id: number;
@@ -69,520 +50,533 @@ interface Tax {
   rate: number;
   country: string;
   region: string;
-  productCategories: string;
-  status: "Active" | "Inactive";
+  productCategories: string[];
+  status: TaxStatus;
 }
 
-const initialTaxes: Tax[] = [
-  {
-    id: 1,
-    name: "Standard VAT",
-    rate: 20.0,
-    country: "United Kingdom",
-    region: "All",
-    productCategories: "All",
-    status: "Active"
-  },
-  {
-    id: 2,
-    name: "Reduced VAT",
-    rate: 5.0,
-    country: "United Kingdom",
-    region: "All",
-    productCategories: "Books, Children's Items",
-    status: "Active"
-  },
-  {
-    id: 3,
-    name: "Sales Tax",
-    rate: 8.875,
-    country: "United States",
-    region: "New York",
-    productCategories: "All",
-    status: "Active"
-  },
-  {
-    id: 4,
-    name: "Sales Tax",
-    rate: 7.25,
-    country: "United States",
-    region: "California",
-    productCategories: "All",
-    status: "Active"
-  },
-  {
-    id: 5,
-    name: "HST",
-    rate: 13.0,
-    country: "Canada",
-    region: "Ontario",
-    productCategories: "All",
-    status: "Active"
-  },
-  {
-    id: 6,
-    name: "GST",
-    rate: 5.0,
-    country: "Canada",
-    region: "Alberta",
-    productCategories: "All",
-    status: "Active"
-  },
-  {
-    id: 7,
-    name: "EU VAT",
-    rate: 19.0,
-    country: "Germany",
-    region: "All",
-    productCategories: "All",
-    status: "Inactive"
-  }
+interface TaxFormValues {
+  name: string;
+  rate: number;
+  country: string;
+  region: string;
+  productCategories: string[];
+  status: TaxStatus;
+}
+
+const countries = [
+  { value: "us", label: "United States" },
+  { value: "ca", label: "Canada" },
+  { value: "uk", label: "United Kingdom" },
+  { value: "au", label: "Australia" },
+  { value: "de", label: "Germany" },
+  { value: "fr", label: "France" }
+];
+
+const categories = [
+  { value: "electronics", label: "Electronics" },
+  { value: "clothing", label: "Clothing" },
+  { value: "books", label: "Books" },
+  { value: "furniture", label: "Furniture" },
+  { value: "groceries", label: "Groceries" },
+  { value: "toys", label: "Toys" }
 ];
 
 export default function Taxes() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [taxes, setTaxes] = useState<Tax[]>(initialTaxes);
-  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedTax, setSelectedTax] = useState<Tax | null>(null);
-  const { toast } = useToast();
-
-  const filteredTaxes = searchTerm 
-    ? taxes.filter(tax => 
-        tax.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tax.country.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        tax.region.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : taxes;
-
-  const form = useForm<TaxFormValues>({
-    resolver: zodResolver(taxFormSchema),
-    defaultValues: {
-      name: "",
-      rate: "0",
-      country: "",
-      region: "All",
-      productCategories: "All",
-      status: "Active"
+  const [taxes, setTaxes] = useState<Tax[]>([
+    {
+      id: 1,
+      name: "California Sales Tax",
+      rate: 7.25,
+      country: "us",
+      region: "California",
+      productCategories: ["electronics", "furniture", "clothing"],
+      status: "active"
     },
+    {
+      id: 2,
+      name: "UK VAT Standard",
+      rate: 20,
+      country: "uk",
+      region: "All",
+      productCategories: ["electronics", "furniture", "clothing", "books", "toys"],
+      status: "active"
+    },
+    {
+      id: 3,
+      name: "Canada GST",
+      rate: 5,
+      country: "ca",
+      region: "All",
+      productCategories: ["electronics", "furniture", "clothing", "books", "toys", "groceries"],
+      status: "active"
+    }
+  ]);
+  
+  const [isAddTaxOpen, setIsAddTaxOpen] = useState(false);
+  const [isEditTaxOpen, setIsEditTaxOpen] = useState(false);
+  const [selectedTax, setSelectedTax] = useState<Tax | null>(null);
+  const [formValues, setFormValues] = useState<TaxFormValues>({
+    name: "",
+    rate: 0,
+    country: "",
+    region: "",
+    productCategories: [],
+    status: "active"
   });
-
-  const handleCreateTax = (values: TaxFormValues) => {
-    const newTax: Tax = {
-      id: taxes.length > 0 ? Math.max(...taxes.map(t => t.id)) + 1 : 1,
-      name: values.name,
-      rate: Number(values.rate),
-      country: values.country,
-      region: values.region,
-      productCategories: values.productCategories,
-      status: values.status
-    };
-    
-    setTaxes([...taxes, newTax]);
-    setIsCreateDialogOpen(false);
-    form.reset();
-    
-    toast({
-      title: "Tax rate created",
-      description: `${newTax.name} has been added successfully.`,
+  
+  const { toast } = useToast();
+  
+  const handleOpenAddTax = () => {
+    setFormValues({
+      name: "",
+      rate: 0,
+      country: "",
+      region: "",
+      productCategories: [],
+      status: "active"
     });
+    setIsAddTaxOpen(true);
   };
-
-  const handleUpdateTax = (values: TaxFormValues) => {
-    if (!selectedTax) return;
-    
-    const updatedTaxes = taxes.map(tax => 
-      tax.id === selectedTax.id 
-        ? { 
-            ...tax, 
-            name: values.name,
-            rate: Number(values.rate),
-            country: values.country,
-            region: values.region,
-            productCategories: values.productCategories,
-            status: values.status 
-          }
-        : tax
-    );
-    
-    setTaxes(updatedTaxes);
-    setIsUpdateDialogOpen(false);
-    form.reset();
-    
-    toast({
-      title: "Tax rate updated",
-      description: `${values.name} has been updated successfully.`,
-    });
-  };
-
-  const handleDeleteTax = () => {
-    if (!selectedTax) return;
-    
-    const updatedTaxes = taxes.filter(tax => tax.id !== selectedTax.id);
-    setTaxes(updatedTaxes);
-    setIsDeleteDialogOpen(false);
-    
-    toast({
-      title: "Tax rate deleted",
-      description: `${selectedTax.name} has been deleted successfully.`,
-      variant: "destructive",
-    });
-  };
-
-  const openUpdateDialog = (tax: Tax) => {
+  
+  const handleOpenEditTax = (tax: Tax) => {
     setSelectedTax(tax);
-    form.reset({
+    setFormValues({
       name: tax.name,
-      rate: tax.rate.toString(),
+      rate: tax.rate,
       country: tax.country,
       region: tax.region,
       productCategories: tax.productCategories,
       status: tax.status
     });
-    setIsUpdateDialogOpen(true);
+    setIsEditTaxOpen(true);
   };
-
-  const openDeleteDialog = (tax: Tax) => {
-    setSelectedTax(tax);
-    setIsDeleteDialogOpen(true);
+  
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    
+    if (name === "rate") {
+      setFormValues({
+        ...formValues,
+        [name]: Number(value)
+      });
+    } else {
+      setFormValues({
+        ...formValues,
+        [name]: value
+      });
+    }
+  };
+  
+  const handleSelectChange = (name: string, value: string | string[]) => {
+    setFormValues({
+      ...formValues,
+      [name]: value
+    });
+  };
+  
+  const handleAddTax = () => {
+    const newTax: Tax = {
+      id: taxes.length > 0 ? Math.max(...taxes.map(t => t.id)) + 1 : 1,
+      name: formValues.name,
+      rate: Number(formValues.rate),
+      country: formValues.country,
+      region: formValues.region,
+      productCategories: formValues.productCategories,
+      status: formValues.status
+    };
+    
+    setTaxes([...taxes, newTax]);
+    setIsAddTaxOpen(false);
+    
+    toast({
+      title: "Tax Rate Added",
+      description: `${newTax.name} has been added successfully.`,
+    });
+  };
+  
+  const handleUpdateTax = () => {
+    if (!selectedTax) return;
+    
+    setTaxes(taxes.map(tax => 
+      tax.id === selectedTax.id 
+        ? { 
+            ...tax, 
+            name: formValues.name,
+            rate: Number(formValues.rate),
+            country: formValues.country,
+            region: formValues.region,
+            productCategories: formValues.productCategories,
+            status: formValues.status 
+          }
+        : tax
+    ));
+    
+    setIsEditTaxOpen(false);
+    
+    toast({
+      title: "Tax Rate Updated",
+      description: `${formValues.name} has been updated successfully.`,
+    });
+  };
+  
+  const handleDeleteTax = (id: number) => {
+    setTaxes(taxes.filter(tax => tax.id !== id));
+    
+    toast({
+      title: "Tax Rate Deleted",
+      description: "The tax rate has been deleted successfully.",
+    });
+  };
+  
+  const getCountryName = (code: string) => {
+    return countries.find(country => country.value === code)?.label || code;
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Taxes</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Tax Rates</h2>
           <p className="text-muted-foreground">
-            Manage tax rates and rules
+            Manage tax rates and configurations for different regions
           </p>
         </div>
-        <Button className="flex items-center gap-2" onClick={() => {
-          form.reset({
-            name: "",
-            rate: "0",
-            country: "",
-            region: "All",
-            productCategories: "All",
-            status: "Active"
-          });
-          setIsCreateDialogOpen(true);
-        }}>
-          <Plus className="h-4 w-4" />
-          <span>Add Tax</span>
-        </Button>
+        <Button onClick={handleOpenAddTax}>Add New Tax Rate</Button>
       </div>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle>Tax Rates</CardTitle>
-          <CardDescription>
-            Showing {filteredTaxes.length} tax rates
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-2 mb-4">
-            <div className="relative max-w-sm">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search taxes..." 
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[80px]">ID</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead className="text-center">Rate</TableHead>
-                  <TableHead>Country</TableHead>
-                  <TableHead>Region</TableHead>
-                  <TableHead>Applied To</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredTaxes.map(tax => (
-                  <TableRow key={tax.id}>
-                    <TableCell className="font-medium">#{tax.id}</TableCell>
-                    <TableCell className="flex items-center gap-2">
-                      <Percent className="h-5 w-5 text-muted-foreground" />
-                      {tax.name}
-                    </TableCell>
-                    <TableCell className="text-center">{tax.rate}%</TableCell>
-                    <TableCell>{tax.country}</TableCell>
-                    <TableCell>{tax.region}</TableCell>
-                    <TableCell className="max-w-xs truncate">{tax.productCategories}</TableCell>
-                    <TableCell>
-                      <Badge variant={tax.status === "Active" ? "default" : "secondary"}>
-                        {tax.status}
+      
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Name</TableHead>
+              <TableHead>Rate (%)</TableHead>
+              <TableHead>Country</TableHead>
+              <TableHead>Region</TableHead>
+              <TableHead>Categories</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {taxes.map(tax => (
+              <TableRow key={tax.id}>
+                <TableCell className="font-medium">{tax.name}</TableCell>
+                <TableCell>{tax.rate}%</TableCell>
+                <TableCell>{getCountryName(tax.country)}</TableCell>
+                <TableCell>{tax.region}</TableCell>
+                <TableCell>
+                  <div className="flex flex-wrap gap-1">
+                    {tax.productCategories.slice(0, 2).map((category) => (
+                      <Badge key={category} variant="outline" className="capitalize">
+                        {category}
                       </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => openUpdateDialog(tax)}
-                        >
-                          <Edit className="h-4 w-4" />
-                          <span className="sr-only">Edit</span>
+                    ))}
+                    {tax.productCategories.length > 2 && (
+                      <Badge variant="outline">+{tax.productCategories.length - 2} more</Badge>
+                    )}
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Badge className={tax.status === "active" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"} variant="outline">
+                    {tax.status.charAt(0).toUpperCase() + tax.status.slice(1)}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleOpenEditTax(tax)}
+                    >
+                      Edit
+                    </Button>
+                    
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="sm">
+                          Delete
                         </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => openDeleteDialog(tax)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Delete</span>
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Tax Rate</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{tax.name}"? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => handleDeleteTax(tax.id)}
+                            className="bg-red-600 hover:bg-red-700"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+      
+      {/* Add Tax Dialog */}
+      <Dialog open={isAddTaxOpen} onOpenChange={setIsAddTaxOpen}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Tax Rate</DialogTitle>
             <DialogDescription>
-              Create a new tax rate for your products.
+              Create a new tax rate for your store
             </DialogDescription>
           </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleCreateTax)} className="space-y-4">
-              <FormField
-                control={form.control}
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="name"
                 name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tax Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Sales Tax, VAT" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                className="col-span-3"
+                value={formValues.name}
+                onChange={handleInputChange}
+                placeholder="e.g., New York Sales Tax"
               />
-              <FormField
-                control={form.control}
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="rate" className="text-right">
+                Rate (%)
+              </Label>
+              <Input
+                id="rate"
                 name="rate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Rate (%)</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.01" min="0" max="100" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                type="number"
+                className="col-span-3"
+                value={formValues.rate}
+                onChange={handleInputChange}
+                min={0}
+                step={0.01}
+                placeholder="e.g., 8.875"
               />
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="country"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Country</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., United States" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="region"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Region/State</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., California, All" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <FormField
-                control={form.control}
-                name="productCategories"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Applied To (Categories)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Electronics, All" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Country</Label>
+              <Select 
+                value={formValues.country} 
+                onValueChange={(value) => handleSelectChange('country', value)}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select country" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {countries.map(country => (
+                      <SelectItem key={country.value} value={country.value}>
+                        {country.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="region" className="text-right">
+                Region
+              </Label>
+              <Input
+                id="region"
+                name="region"
+                className="col-span-3"
+                value={formValues.region}
+                onChange={handleInputChange}
+                placeholder="e.g., New York State or 'All' for country-wide"
               />
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <FormControl>
-                      <select
-                        className="w-full p-2 border rounded-md"
-                        {...field}
-                      >
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="outline">Cancel</Button>
-                </DialogClose>
-                <Button type="submit">Create Tax</Button>
-              </DialogFooter>
-            </form>
-          </Form>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Categories</Label>
+              <Select 
+                value={formValues.productCategories} 
+                onValueChange={(value: string[]) => handleSelectChange('productCategories', value)}
+                multiple
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select product categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {categories.map(category => (
+                      <SelectItem key={category.value} value={category.value}>
+                        {category.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Status</Label>
+              <Select 
+                value={formValues.status} 
+                onValueChange={(value: TaxStatus) => handleSelectChange('status', value)}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddTaxOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddTax}>
+              Create Tax Rate
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
-        <DialogContent className="sm:max-w-[425px]">
+      
+      {/* Edit Tax Dialog */}
+      <Dialog open={isEditTaxOpen} onOpenChange={setIsEditTaxOpen}>
+        <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Tax Rate</DialogTitle>
             <DialogDescription>
-              Update tax rate details.
+              Update the details of this tax rate
             </DialogDescription>
           </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleUpdateTax)} className="space-y-4">
-              <FormField
-                control={form.control}
+          
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-name" className="text-right">
+                Name
+              </Label>
+              <Input
+                id="edit-name"
                 name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tax Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Sales Tax, VAT" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                className="col-span-3"
+                value={formValues.name}
+                onChange={handleInputChange}
               />
-              <FormField
-                control={form.control}
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-rate" className="text-right">
+                Rate (%)
+              </Label>
+              <Input
+                id="edit-rate"
                 name="rate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Rate (%)</FormLabel>
-                    <FormControl>
-                      <Input type="number" step="0.01" min="0" max="100" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                type="number"
+                className="col-span-3"
+                value={formValues.rate}
+                onChange={handleInputChange}
+                min={0}
+                step={0.01}
               />
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="country"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Country</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., United States" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="region"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Region/State</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., California, All" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <FormField
-                control={form.control}
-                name="productCategories"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Applied To (Categories)</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Electronics, All" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Country</Label>
+              <Select 
+                value={formValues.country} 
+                onValueChange={(value) => handleSelectChange('country', value)}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select country" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {countries.map(country => (
+                      <SelectItem key={country.value} value={country.value}>
+                        {country.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-region" className="text-right">
+                Region
+              </Label>
+              <Input
+                id="edit-region"
+                name="region"
+                className="col-span-3"
+                value={formValues.region}
+                onChange={handleInputChange}
               />
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <FormControl>
-                      <select
-                        className="w-full p-2 border rounded-md"
-                        {...field}
-                      >
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="outline">Cancel</Button>
-                </DialogClose>
-                <Button type="submit">Update Tax</Button>
-              </DialogFooter>
-            </form>
-          </Form>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Categories</Label>
+              <Select 
+                value={formValues.productCategories} 
+                onValueChange={(value: string[]) => handleSelectChange('productCategories', value)}
+                multiple
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select product categories" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {categories.map(category => (
+                      <SelectItem key={category.value} value={category.value}>
+                        {category.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">Status</Label>
+              <Select 
+                value={formValues.status} 
+                onValueChange={(value: TaxStatus) => handleSelectChange('status', value)}
+              >
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditTaxOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateTax}>
+              Update Tax Rate
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the tax rate{" "}
-              <span className="font-semibold">{selectedTax?.name}</span> for{" "}
-              <span className="font-semibold">{selectedTax?.country} ({selectedTax?.region})</span> and remove it from our servers.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteTax} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </div>
   );
 }

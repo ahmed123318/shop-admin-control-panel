@@ -21,38 +21,48 @@ import Taxes from "./pages/Taxes";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import { useThemeInitialization } from "./lib/theme";
 
 // Create a client
 const queryClient = new QueryClient();
 
+const AppContent: React.FC = () => {
+  // Initialize theme
+  useThemeInitialization();
+  
+  return (
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<AdminLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="products" element={<Products />} />
+            <Route path="categories" element={<Categories />} />
+            <Route path="subcategories" element={<Subcategories />} />
+            <Route path="brands" element={<Brands />} />
+            <Route path="orders" element={<Orders />} />
+            <Route path="customers" element={<Customers />} />
+            <Route path="users" element={<Users />} />
+            <Route path="reviews" element={<Reviews />} />
+            <Route path="coupons" element={<Coupons />} />
+            <Route path="suppliers" element={<Suppliers />} />
+            <Route path="taxes" element={<Taxes />} />
+            <Route path="analytics" element={<Analytics />} />
+            <Route path="settings" element={<Settings />} />
+          </Route>
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  );
+};
+
 const App: React.FC = () => (
   <React.StrictMode>
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<AdminLayout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="products" element={<Products />} />
-              <Route path="categories" element={<Categories />} />
-              <Route path="subcategories" element={<Subcategories />} />
-              <Route path="brands" element={<Brands />} />
-              <Route path="orders" element={<Orders />} />
-              <Route path="customers" element={<Customers />} />
-              <Route path="users" element={<Users />} />
-              <Route path="reviews" element={<Reviews />} />
-              <Route path="coupons" element={<Coupons />} />
-              <Route path="suppliers" element={<Suppliers />} />
-              <Route path="taxes" element={<Taxes />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="settings" element={<Settings />} />
-            </Route>
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <AppContent />
     </QueryClientProvider>
   </React.StrictMode>
 );

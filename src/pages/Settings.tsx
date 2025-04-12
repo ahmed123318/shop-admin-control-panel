@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,6 +17,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Check } from "lucide-react";
+import { applyAccentColor } from "@/lib/theme";
 
 // Define available accent colors
 const accentColors = [
@@ -38,14 +40,13 @@ export default function Settings() {
 
   // Apply the selected accent color when component mounts and when it changes
   useEffect(() => {
-    document.documentElement.style.setProperty('--accent-color', selectedAccentColor);
-    // Save to localStorage for persistence
-    localStorage.setItem('accent-color', selectedAccentColor);
+    applyAccentColor(selectedAccentColor);
   }, [selectedAccentColor]);
 
   // Handle accent color change
   const handleAccentColorChange = (colorValue: string) => {
     setSelectedAccentColor(colorValue);
+    applyAccentColor(colorValue);
     
     toast({
       title: "Appearance updated",
@@ -57,8 +58,10 @@ export default function Settings() {
   const handleSaveAppearance = () => {
     // Save all appearance settings
     localStorage.setItem('dark-mode', isDarkMode.toString());
-    localStorage.setItem('accent-color', selectedAccentColor);
     localStorage.setItem('sidebar-position', sidebarPosition);
+    
+    // Apply accent color (already saved in localStorage by the applyAccentColor function)
+    applyAccentColor(selectedAccentColor);
     
     toast({
       title: "Appearance saved",
@@ -407,7 +410,7 @@ export default function Settings() {
                 
                 <div>
                   <h3 className="font-medium">Accent Color</h3>
-                  <p className="text-sm text-muted-foreground">Choose your preferred accent color</p>
+                  <p className="text-sm text-muted-foreground">Choose your preferred accent color for the entire system</p>
                   <div className="mt-4 grid grid-cols-5 gap-2">
                     {accentColors.map((color) => (
                       <div
@@ -431,9 +434,11 @@ export default function Settings() {
                   <div className="mt-4">
                     <h4 className="text-sm font-medium">Preview</h4>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <Button variant="accent">Accent Button</Button>
+                      <Button>Primary Button</Button>
                       <Button variant="outline">Outline</Button>
+                      <Button variant="secondary">Secondary</Button>
                       <Button variant="ghost">Ghost</Button>
+                      <Button variant="destructive">Destructive</Button>
                     </div>
                   </div>
                 </div>
@@ -458,7 +463,7 @@ export default function Settings() {
               </div>
               
               <div className="flex justify-end">
-                <Button variant="accent" onClick={handleSaveAppearance}>Save Preferences</Button>
+                <Button onClick={handleSaveAppearance}>Save Preferences</Button>
               </div>
             </CardContent>
           </Card>
