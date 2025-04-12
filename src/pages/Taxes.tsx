@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Table, 
@@ -402,24 +401,29 @@ export default function Taxes() {
             
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">Categories</Label>
-              <Select 
-                value={formValues.productCategories} 
-                onValueChange={(value: string[]) => handleSelectChange('productCategories', value)}
-                multiple
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select product categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {categories.map(category => (
-                      <SelectItem key={category.value} value={category.value}>
-                        {category.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+              <div className="col-span-3">
+                <Select
+                  onValueChange={(value) => {
+                    if (typeof value === 'string') {
+                      handleSelectChange('productCategories', value.split(','));
+                    }
+                  }}
+                  value={formValues.productCategories.join(',')}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select product categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {categories.map(category => (
+                        <SelectItem key={category.value} value={category.value}>
+                          {category.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
@@ -528,24 +532,29 @@ export default function Taxes() {
             
             <div className="grid grid-cols-4 items-center gap-4">
               <Label className="text-right">Categories</Label>
-              <Select 
-                value={formValues.productCategories} 
-                onValueChange={(value: string[]) => handleSelectChange('productCategories', value)}
-                multiple
-              >
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select product categories" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup>
-                    {categories.map(category => (
-                      <SelectItem key={category.value} value={category.value}>
-                        {category.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+              <div className="col-span-3">
+                <Select
+                  onValueChange={(value) => {
+                    if (typeof value === 'string') {
+                      handleSelectChange('productCategories', value.split(','));
+                    }
+                  }}
+                  value={formValues.productCategories.join(',')}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select product categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {categories.map(category => (
+                        <SelectItem key={category.value} value={category.value}>
+                          {category.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
             <div className="grid grid-cols-4 items-center gap-4">
