@@ -1,5 +1,4 @@
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Label } from "@/components/ui/label";
@@ -16,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { Check } from "lucide-react";
 
 // Define available accent colors
 const accentColors = [
@@ -28,16 +28,24 @@ const accentColors = [
 
 export default function Settings() {
   const [isDarkMode, setIsDarkMode] = useState(false);
-  const [selectedAccentColor, setSelectedAccentColor] = useState(accentColors[0].value);
+  const [selectedAccentColor, setSelectedAccentColor] = useState(() => {
+    // Try to get stored accent color from localStorage
+    const storedColor = localStorage.getItem('accent-color');
+    return storedColor || accentColors[0].value;
+  });
   const [sidebarPosition, setSidebarPosition] = useState("left");
   const { toast } = useToast();
+
+  // Apply the selected accent color when component mounts and when it changes
+  useEffect(() => {
+    document.documentElement.style.setProperty('--accent-color', selectedAccentColor);
+    // Save to localStorage for persistence
+    localStorage.setItem('accent-color', selectedAccentColor);
+  }, [selectedAccentColor]);
 
   // Handle accent color change
   const handleAccentColorChange = (colorValue: string) => {
     setSelectedAccentColor(colorValue);
-    
-    // Update CSS variables
-    document.documentElement.style.setProperty('--primary', colorValue);
     
     toast({
       title: "Appearance updated",
@@ -47,6 +55,11 @@ export default function Settings() {
 
   // Handle appearance settings save
   const handleSaveAppearance = () => {
+    // Save all appearance settings
+    localStorage.setItem('dark-mode', isDarkMode.toString());
+    localStorage.setItem('accent-color', selectedAccentColor);
+    localStorage.setItem('sidebar-position', sidebarPosition);
+    
     toast({
       title: "Appearance saved",
       description: "Your appearance preferences have been saved.",
@@ -84,7 +97,7 @@ export default function Settings() {
       description: "Your billing information has been updated successfully.",
     });
   };
-  
+
   return (
     <div className="space-y-6">
       <div>
@@ -399,19 +412,30 @@ export default function Settings() {
                     {accentColors.map((color) => (
                       <div
                         key={color.value}
-                        className={`h-10 w-full cursor-pointer rounded-md ${color.class} ${
-                          selectedAccentColor === color.value 
-                            ? "ring-2 ring-offset-2" 
-                            : ""
-                        }`}
+                        className={`relative h-12 w-full cursor-pointer rounded-md ${color.class} transition-all hover:scale-105`}
                         onClick={() => handleAccentColorChange(color.value)}
                         title={color.name}
-                      />
+                      >
+                        {selectedAccentColor === color.value && (
+                          <div className="absolute inset-0 flex items-center justify-center rounded-md ring-2 ring-white">
+                            <Check className="h-6 w-6 text-white" />
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                   <p className="mt-2 text-sm text-muted-foreground">
                     Selected: {accentColors.find(c => c.value === selectedAccentColor)?.name || "Purple"}
                   </p>
+                  
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium">Preview</h4>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <Button variant="accent">Accent Button</Button>
+                      <Button variant="outline">Outline</Button>
+                      <Button variant="ghost">Ghost</Button>
+                    </div>
+                  </div>
                 </div>
                 
                 <Separator />
@@ -434,7 +458,7 @@ export default function Settings() {
               </div>
               
               <div className="flex justify-end">
-                <Button onClick={handleSaveAppearance}>Save Preferences</Button>
+                <Button variant="accent" onClick={handleSaveAppearance}>Save Preferences</Button>
               </div>
             </CardContent>
           </Card>

@@ -70,6 +70,7 @@ export default {
 					success: '#10b981',
 					warning: '#f59e0b',
 					error: '#ef4444',
+					accent: 'var(--accent-color, #6941c6)',
 				}
 			},
 			borderRadius: {

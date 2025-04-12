@@ -19,7 +19,7 @@ const buttonVariants = cva(
           "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        accent: "bg-ecommerce-purple text-white hover:bg-ecommerce-purple/90",
+        accent: "bg-ecommerce-accent text-white hover:bg-ecommerce-accent/90",
         warning: "bg-ecommerce-warning text-white hover:bg-ecommerce-warning/90",
         success: "bg-ecommerce-success text-white hover:bg-ecommerce-success/90",
         error: "bg-ecommerce-error text-white hover:bg-ecommerce-error/90",

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Table, 
@@ -49,21 +48,16 @@ import { useForm } from "react-hook-form";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Plus, Edit, Trash2, Percent, Search, Calendar } from "lucide-react";
+import { Plus, Edit, Trash2, Ticket, Search } from "lucide-react";
 
-// Define coupon form schema
+// Define coupon form schema with proper data type conversions
 const couponFormSchema = z.object({
-  code: z.string().min(3, "Code must be at least 3 characters").toUpperCase(),
-  discount: z.string().transform(val => parseInt(val, 10)),
-  type: z.enum(["Percentage", "Fixed"]),
-  minPurchase: z.string().transform(val => parseInt(val, 10)),
-  maxDiscount: z.string().transform(val => {
-    if (val === "") return null;
-    return parseInt(val, 10);
-  }).nullable(),
-  validFrom: z.string(),
-  validTo: z.string(),
-  status: z.enum(["Active", "Inactive", "Expired", "Scheduled"])
+  code: z.string().min(2, "Code must be at least 2 characters").max(20, "Code cannot be longer than 20 characters"),
+  type: z.enum(["Percentage", "Fixed", "Free Shipping"]),
+  value: z.string().transform(val => parseFloat(val)),
+  minPurchase: z.string().transform(val => parseFloat(val)),
+  maxUses: z.string().transform(val => parseInt(val, 10)),
+  status: z.enum(["Active", "Inactive", "Expired"])
 });
 
 type CouponFormValues = z.infer<typeof couponFormSchema>;
@@ -71,88 +65,88 @@ type CouponFormValues = z.infer<typeof couponFormSchema>;
 interface Coupon {
   id: number;
   code: string;
-  discount: number;
-  type: "Percentage" | "Fixed";
+  type: "Percentage" | "Fixed" | "Free Shipping";
+  value: number;
   minPurchase: number;
-  maxDiscount: number | null;
-  validFrom: string;
-  validTo: string;
-  usage: number;
-  status: "Active" | "Inactive" | "Expired" | "Scheduled";
+  maxUses: number;
+  usedCount: number;
+  startDate: string;
+  endDate: string;
+  status: "Active" | "Inactive" | "Expired";
 }
 
 const initialCoupons: Coupon[] = [
   {
     id: 1,
-    code: "SUMMER25",
-    discount: 25,
+    code: "SUMMER20",
     type: "Percentage",
-    minPurchase: 100,
-    maxDiscount: 50,
-    validFrom: "2023-06-01",
-    validTo: "2023-08-31",
-    usage: 245,
+    value: 20.0,
+    minPurchase: 50.0,
+    maxUses: 100,
+    usedCount: 35,
+    startDate: "2023-06-01",
+    endDate: "2023-08-31",
     status: "Active"
   },
   {
     id: 2,
-    code: "WELCOME10",
-    discount: 10,
-    type: "Percentage",
-    minPurchase: 0,
-    maxDiscount: 100,
-    validFrom: "2023-01-01",
-    validTo: "2023-12-31",
-    usage: 589,
+    code: "FREESHIP",
+    type: "Free Shipping",
+    value: 0.0,
+    minPurchase: 25.0,
+    maxUses: 50,
+    usedCount: 12,
+    startDate: "2023-07-15",
+    endDate: "2023-09-15",
     status: "Active"
   },
   {
     id: 3,
-    code: "FLAT50",
-    discount: 50,
-    type: "Fixed",
-    minPurchase: 200,
-    maxDiscount: null,
-    validFrom: "2023-11-20",
-    validTo: "2023-11-30",
-    usage: 87,
-    status: "Expired"
+    code: "NEWUSER10",
+    type: "Percentage",
+    value: 10.0,
+    minPurchase: 0.0,
+    maxUses: 200,
+    usedCount: 145,
+    startDate: "2023-01-01",
+    endDate: "2023-12-31",
+    status: "Active"
   },
   {
     id: 4,
-    code: "HOLIDAY15",
-    discount: 15,
-    type: "Percentage",
-    minPurchase: 75,
-    maxDiscount: 30,
-    validFrom: "2023-12-01",
-    validTo: "2023-12-31",
-    usage: 112,
+    code: "FIXED15",
+    type: "Fixed",
+    value: 15.0,
+    minPurchase: 40.0,
+    maxUses: 75,
+    usedCount: 60,
+    startDate: "2023-09-01",
+    endDate: "2023-10-31",
     status: "Active"
   },
   {
     id: 5,
-    code: "APP20",
-    discount: 20,
+    code: "WINTER25",
     type: "Percentage",
-    minPurchase: 50,
-    maxDiscount: 40,
-    validFrom: "2023-10-01",
-    validTo: "2023-12-31",
-    usage: 203,
-    status: "Active"
+    value: 25.0,
+    minPurchase: 100.0,
+    maxUses: 50,
+    usedCount: 48,
+    startDate: "2023-12-01",
+    endDate: "2024-02-29",
+    status: "Inactive"
   },
   {
     id: 6,
-    code: "FLASH30",
-    discount: 30,
+    code: "SPRING5",
     type: "Percentage",
-    minPurchase: 150,
-    maxDiscount: 75,
-    validFrom: "2024-01-01",
-    validTo: "2024-01-07",
-    usage: 0,
-    status: "Scheduled"
+    value: 5.0,
+    minPurchase: 20.0,
+    maxUses: 150,
+    usedCount: 150,
+    startDate: "2023-03-01",
+    endDate: "2023-05-31",
+    status: "Expired"
   }
 ];
 
@@ -167,7 +161,8 @@ export default function Coupons() {
 
   const filteredCoupons = searchTerm 
     ? coupons.filter(coupon => 
-        coupon.code.toLowerCase().includes(searchTerm.toLowerCase())
+        coupon.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        coupon.type.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : coupons;
 
@@ -176,12 +171,10 @@ export default function Coupons() {
     resolver: zodResolver(couponFormSchema),
     defaultValues: {
       code: "",
-      discount: "10",
       type: "Percentage",
+      value: "0",
       minPurchase: "0",
-      maxDiscount: "",
-      validFrom: new Date().toISOString().split('T')[0],
-      validTo: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      maxUses: "1",
       status: "Active"
     },
   });
@@ -190,14 +183,14 @@ export default function Coupons() {
   const handleCreateCoupon = (values: CouponFormValues) => {
     const newCoupon: Coupon = {
       id: coupons.length > 0 ? Math.max(...coupons.map(c => c.id)) + 1 : 1,
-      code: values.code,
-      discount: values.discount,
+      code: values.code.toUpperCase(),
       type: values.type,
-      minPurchase: values.minPurchase,
-      maxDiscount: values.maxDiscount,
-      validFrom: values.validFrom,
-      validTo: values.validTo,
-      usage: 0,
+      value: parseFloat(values.value.toString()),
+      minPurchase: parseFloat(values.minPurchase.toString()),
+      maxUses: parseInt(values.maxUses.toString(), 10),
+      usedCount: 0,
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       status: values.status
     };
     
@@ -207,7 +200,7 @@ export default function Coupons() {
     
     toast({
       title: "Coupon created",
-      description: `${newCoupon.code} has been added successfully.`,
+      description: `Coupon ${newCoupon.code} has been added successfully.`,
     });
   };
 
@@ -219,14 +212,12 @@ export default function Coupons() {
       coupon.id === selectedCoupon.id 
         ? { 
             ...coupon, 
-            code: values.code,
-            discount: values.discount,
+            code: values.code.toUpperCase(),
             type: values.type,
-            minPurchase: values.minPurchase,
-            maxDiscount: values.maxDiscount,
-            validFrom: values.validFrom,
-            validTo: values.validTo,
-            status: values.status
+            value: parseFloat(values.value.toString()),
+            minPurchase: parseFloat(values.minPurchase.toString()),
+            maxUses: parseInt(values.maxUses.toString(), 10),
+            status: values.status 
           }
         : coupon
     );
@@ -237,7 +228,7 @@ export default function Coupons() {
     
     toast({
       title: "Coupon updated",
-      description: `${values.code} has been updated successfully.`,
+      description: `Coupon ${values.code} has been updated successfully.`,
     });
   };
 
@@ -251,7 +242,7 @@ export default function Coupons() {
     
     toast({
       title: "Coupon deleted",
-      description: `${selectedCoupon.code} has been deleted successfully.`,
+      description: `Coupon ${selectedCoupon.code} has been deleted successfully.`,
       variant: "destructive",
     });
   };
@@ -261,12 +252,10 @@ export default function Coupons() {
     setSelectedCoupon(coupon);
     form.reset({
       code: coupon.code,
-      discount: coupon.discount.toString(),
       type: coupon.type,
+      value: coupon.value.toString(),
       minPurchase: coupon.minPurchase.toString(),
-      maxDiscount: coupon.maxDiscount ? coupon.maxDiscount.toString() : "",
-      validFrom: coupon.validFrom,
-      validTo: coupon.validTo,
+      maxUses: coupon.maxUses.toString(),
       status: coupon.status
     });
     setIsUpdateDialogOpen(true);
@@ -284,18 +273,16 @@ export default function Coupons() {
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Coupons</h2>
           <p className="text-muted-foreground">
-            Manage discount coupons and promotions
+            Manage your discount coupons
           </p>
         </div>
         <Button className="flex items-center gap-2" onClick={() => {
           form.reset({
             code: "",
-            discount: "10",
             type: "Percentage",
+            value: "0",
             minPurchase: "0",
-            maxDiscount: "",
-            validFrom: new Date().toISOString().split('T')[0],
-            validTo: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            maxUses: "1",
             status: "Active"
           });
           setIsCreateDialogOpen(true);
@@ -307,7 +294,7 @@ export default function Coupons() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle>Discount Coupons</CardTitle>
+          <CardTitle>Coupons</CardTitle>
           <CardDescription>
             Showing {filteredCoupons.length} coupons
           </CardDescription>
@@ -330,10 +317,10 @@ export default function Coupons() {
                 <TableRow>
                   <TableHead className="w-[80px]">ID</TableHead>
                   <TableHead>Code</TableHead>
-                  <TableHead>Discount</TableHead>
-                  <TableHead>Minimum Purchase</TableHead>
-                  <TableHead>Validity</TableHead>
-                  <TableHead className="text-center">Usage</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead className="text-center">Value</TableHead>
+                  <TableHead>Min. Purchase</TableHead>
+                  <TableHead className="text-center">Used</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -343,29 +330,17 @@ export default function Coupons() {
                   <TableRow key={coupon.id}>
                     <TableCell className="font-medium">#{coupon.id}</TableCell>
                     <TableCell className="flex items-center gap-2">
-                      <Percent className="h-5 w-5 text-muted-foreground" />
-                      <span className="font-mono uppercase">{coupon.code}</span>
+                      <Ticket className="h-5 w-5 text-muted-foreground" />
+                      {coupon.code}
                     </TableCell>
+                    <TableCell>{coupon.type}</TableCell>
+                    <TableCell className="text-center">
+                      {coupon.type === "Percentage" ? `${coupon.value}%` : `$${coupon.value}`}
+                    </TableCell>
+                    <TableCell>${coupon.minPurchase}</TableCell>
+                    <TableCell className="text-center">{coupon.usedCount} / {coupon.maxUses}</TableCell>
                     <TableCell>
-                      {coupon.type === "Percentage" ? `${coupon.discount}%` : `$${coupon.discount}`}
-                      {coupon.maxDiscount && <span className="text-xs text-muted-foreground ml-1">(max ${coupon.maxDiscount})</span>}
-                    </TableCell>
-                    <TableCell>{coupon.minPurchase > 0 ? `$${coupon.minPurchase}` : "None"}</TableCell>
-                    <TableCell className="whitespace-nowrap">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                        {coupon.validFrom} to {coupon.validTo}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-center">{coupon.usage}</TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant={
-                          coupon.status === "Active" ? "default" : 
-                          coupon.status === "Expired" ? "destructive" : 
-                          "secondary"
-                        }
-                      >
+                      <Badge variant={coupon.status === "Active" ? "default" : coupon.status === "Expired" ? "destructive" : "secondary"}>
                         {coupon.status}
                       </Badge>
                     </TableCell>
@@ -403,7 +378,7 @@ export default function Coupons() {
           <DialogHeader>
             <DialogTitle>Add New Coupon</DialogTitle>
             <DialogDescription>
-              Create a new discount coupon for your store.
+              Create a new discount coupon.
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
@@ -415,7 +390,27 @@ export default function Coupons() {
                   <FormItem>
                     <FormLabel>Coupon Code</FormLabel>
                     <FormControl>
-                      <Input placeholder="SUMMER25" {...field} className="uppercase" />
+                      <Input placeholder="e.g., SUMMER20" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Coupon Type</FormLabel>
+                    <FormControl>
+                      <select
+                        className="w-full p-2 border rounded-md"
+                        {...field}
+                      >
+                        <option value="Percentage">Percentage</option>
+                        <option value="Fixed">Fixed Amount</option>
+                        <option value="Free Shipping">Free Shipping</option>
+                      </select>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -424,98 +419,44 @@ export default function Coupons() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="discount"
+                  name="value"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Discount Value</FormLabel>
+                      <FormLabel>Value</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input type="number" step="0.01" min="0" max="100" placeholder="e.g., 20" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Discount Type</FormLabel>
-                      <FormControl>
-                        <select
-                          className="w-full p-2 border rounded-md"
-                          {...field}
-                        >
-                          <option value="Percentage">Percentage (%)</option>
-                          <option value="Fixed">Fixed ($)</option>
-                        </select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="minPurchase"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Min. Purchase ($)</FormLabel>
+                      <FormLabel>Min. Purchase</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="maxDiscount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Max. Discount ($)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="Optional" 
-                          {...field} 
-                          value={field.value || ""} 
-                        />
+                        <Input type="number" step="0.01" min="0" placeholder="e.g., 50" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="validFrom"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Valid From</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="validTo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Valid To</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="maxUses"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max. Uses</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="1" min="1" placeholder="e.g., 100" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="status"
@@ -529,7 +470,7 @@ export default function Coupons() {
                       >
                         <option value="Active">Active</option>
                         <option value="Inactive">Inactive</option>
-                        <option value="Scheduled">Scheduled</option>
+                        <option value="Expired">Expired</option>
                       </select>
                     </FormControl>
                     <FormMessage />
@@ -565,7 +506,27 @@ export default function Coupons() {
                   <FormItem>
                     <FormLabel>Coupon Code</FormLabel>
                     <FormControl>
-                      <Input placeholder="SUMMER25" {...field} className="uppercase" />
+                      <Input placeholder="e.g., SUMMER20" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="type"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Coupon Type</FormLabel>
+                    <FormControl>
+                      <select
+                        className="w-full p-2 border rounded-md"
+                        {...field}
+                      >
+                        <option value="Percentage">Percentage</option>
+                        <option value="Fixed">Fixed Amount</option>
+                        <option value="Free Shipping">Free Shipping</option>
+                      </select>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -574,98 +535,44 @@ export default function Coupons() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="discount"
+                  name="value"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Discount Value</FormLabel>
+                      <FormLabel>Value</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input type="number" step="0.01" min="0" max="100" placeholder="e.g., 20" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Discount Type</FormLabel>
-                      <FormControl>
-                        <select
-                          className="w-full p-2 border rounded-md"
-                          {...field}
-                        >
-                          <option value="Percentage">Percentage (%)</option>
-                          <option value="Fixed">Fixed ($)</option>
-                        </select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
                   name="minPurchase"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Min. Purchase ($)</FormLabel>
+                      <FormLabel>Min. Purchase</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="maxDiscount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Max. Discount ($)</FormLabel>
-                      <FormControl>
-                        <Input 
-                          type="number" 
-                          placeholder="Optional" 
-                          {...field} 
-                          value={field.value || ""} 
-                        />
+                        <Input type="number" step="0.01" min="0" placeholder="e.g., 50" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="validFrom"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Valid From</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="validTo"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Valid To</FormLabel>
-                      <FormControl>
-                        <Input type="date" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+              <FormField
+                control={form.control}
+                name="maxUses"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max. Uses</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="1" min="1" placeholder="e.g., 100" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="status"
@@ -680,7 +587,6 @@ export default function Coupons() {
                         <option value="Active">Active</option>
                         <option value="Inactive">Inactive</option>
                         <option value="Expired">Expired</option>
-                        <option value="Scheduled">Scheduled</option>
                       </select>
                     </FormControl>
                     <FormMessage />
@@ -705,7 +611,7 @@ export default function Coupons() {
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This action cannot be undone. This will permanently delete the coupon{" "}
-              <span className="font-semibold font-mono">{selectedCoupon?.code}</span> and remove it from our servers.
+              <span className="font-semibold">{selectedCoupon?.code}</span> and remove it from our servers.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

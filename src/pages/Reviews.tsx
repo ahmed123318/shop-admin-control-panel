@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Table, 
@@ -51,7 +50,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Star, Edit, Trash2, MessageSquare, Search } from "lucide-react";
 
-// Define review form schema
+// Define review form schema with proper conversion to number
 const reviewFormSchema = z.object({
   productId: z.string().min(1, "Product is required"),
   userName: z.string().min(2, "User name must be at least 2 characters"),
@@ -223,7 +222,7 @@ export default function Reviews() {
             productId: product.id,
             productName: product.name,
             userName: values.userName,
-            rating: values.rating,
+            rating: parseInt(values.rating.toString(), 10),
             comment: values.comment,
             status: values.status 
           }

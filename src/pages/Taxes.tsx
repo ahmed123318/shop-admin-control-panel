@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Table, 
@@ -156,7 +155,6 @@ export default function Taxes() {
       )
     : taxes;
 
-  // Form for creating and updating taxes
   const form = useForm<TaxFormValues>({
     resolver: zodResolver(taxFormSchema),
     defaultValues: {
@@ -169,12 +167,11 @@ export default function Taxes() {
     },
   });
 
-  // Handle tax creation
   const handleCreateTax = (values: TaxFormValues) => {
     const newTax: Tax = {
       id: taxes.length > 0 ? Math.max(...taxes.map(t => t.id)) + 1 : 1,
       name: values.name,
-      rate: values.rate,
+      rate: parseFloat(values.rate.toString()),
       country: values.country,
       region: values.region,
       productCategories: values.productCategories,
@@ -191,7 +188,6 @@ export default function Taxes() {
     });
   };
 
-  // Handle tax update
   const handleUpdateTax = (values: TaxFormValues) => {
     if (!selectedTax) return;
     
@@ -200,7 +196,7 @@ export default function Taxes() {
         ? { 
             ...tax, 
             name: values.name,
-            rate: values.rate,
+            rate: parseFloat(values.rate.toString()),
             country: values.country,
             region: values.region,
             productCategories: values.productCategories,
@@ -219,7 +215,6 @@ export default function Taxes() {
     });
   };
 
-  // Handle tax deletion
   const handleDeleteTax = () => {
     if (!selectedTax) return;
     
@@ -234,7 +229,6 @@ export default function Taxes() {
     });
   };
 
-  // Open update dialog and populate form
   const openUpdateDialog = (tax: Tax) => {
     setSelectedTax(tax);
     form.reset({
@@ -248,7 +242,6 @@ export default function Taxes() {
     setIsUpdateDialogOpen(true);
   };
 
-  // Open delete dialog
   const openDeleteDialog = (tax: Tax) => {
     setSelectedTax(tax);
     setIsDeleteDialogOpen(true);
@@ -357,7 +350,6 @@ export default function Taxes() {
         </CardContent>
       </Card>
 
-      {/* Create Tax Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -465,7 +457,6 @@ export default function Taxes() {
         </DialogContent>
       </Dialog>
 
-      {/* Update Tax Dialog */}
       <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -573,7 +564,6 @@ export default function Taxes() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Tax Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
