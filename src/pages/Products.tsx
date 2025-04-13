@@ -25,7 +25,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Edit, Trash2, Search, Tag, Star, Image } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Tag, Star, Eye, Image } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -33,8 +33,22 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
+  DialogClose
 } from "@/components/ui/dialog";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+import { useToast } from "@/hooks/use-toast";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const products = [
   {
@@ -186,6 +200,8 @@ const products = [
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const filteredProducts = searchTerm 
     ? products.filter(product => 
@@ -196,7 +212,7 @@ export default function Products() {
       )
     : products;
 
-  const renderStars = (rating: number) => {
+  const renderStars = (rating) => {
     return (
       <div className="flex items-center gap-1">
         <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
@@ -205,6 +221,153 @@ export default function Products() {
       </div>
     );
   };
+
+  const handleEdit = (product) => {
+    setSelectedProduct(product);
+    toast({
+      title: "Edit Product",
+      description: `Editing ${product.name}`,
+    });
+  };
+
+  const handleDelete = (product) => {
+    toast({
+      title: "Delete Product",
+      description: `${product.name} would be deleted.`,
+      variant: "destructive",
+    });
+  };
+
+  const handleView = (product) => {
+    setSelectedProduct(product);
+  };
+
+  const ProductImagesDialog = ({product}) => (
+    <Dialog>
+      <DialogTrigger asChild>
+        <div className="h-10 w-10 rounded-md overflow-hidden cursor-pointer">
+          <img 
+            src={product.coverImage} 
+            alt={product.name}
+            className="h-full w-full object-cover"
+          />
+        </div>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Product Images - {product.name}</DialogTitle>
+          <DialogDescription>
+            Browse through all product images
+          </DialogDescription>
+        </DialogHeader>
+        <div className="mt-4">
+          <Carousel className="w-full">
+            <CarouselContent>
+              {product.images.map((image, index) => (
+                <CarouselItem key={index}>
+                  <AspectRatio ratio={16/9}>
+                    <img 
+                      src={image} 
+                      alt={`${product.name} - image ${index + 1}`}
+                      className="rounded-lg object-cover w-full h-full" 
+                    />
+                  </AspectRatio>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <div className="flex justify-center mt-4 gap-2">
+              <CarouselPrevious className="relative static" />
+              <CarouselNext className="relative static" />
+            </div>
+          </Carousel>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+
+  const ProductDetailsDrawer = ({ product }) => (
+    <Drawer>
+      <DrawerTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8">
+          <Eye className="h-4 w-4" />
+          <span className="sr-only">View Product</span>
+        </Button>
+      </DrawerTrigger>
+      <DrawerContent>
+        <DrawerHeader className="text-left">
+          <DrawerTitle>{product.name}</DrawerTitle>
+          <DrawerDescription>Product details</DrawerDescription>
+        </DrawerHeader>
+        <div className="px-4 py-2">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-4">
+              <div className="w-full max-h-64 overflow-hidden rounded-md">
+                <img 
+                  src={product.coverImage} 
+                  alt={product.name} 
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                {product.images.slice(0, 3).map((image, i) => (
+                  <div key={i} className="h-20 overflow-hidden rounded-md">
+                    <img src={image} alt={`${product.name} ${i}`} className="h-full w-full object-cover" />
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-3">
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground">ID</h3>
+                <p>#{product.id}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground">Brand</h3>
+                <p>{product.brand}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground">Category</h3>
+                <p>{product.category} / {product.subcategory}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground">Price</h3>
+                <p className="font-medium">${product.price.toFixed(2)}</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground">Stock</h3>
+                <p>{product.stock} units</p>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground">Rating</h3>
+                <div className="flex items-center">
+                  {renderStars(product.rating)}
+                </div>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-muted-foreground">Status</h3>
+                <Badge variant={product.status === "Active" ? "default" : "secondary"}>
+                  {product.status}
+                </Badge>
+              </div>
+            </div>
+          </div>
+        </div>
+        <DrawerFooter className="flex flex-row justify-between">
+          <Button variant="outline" onClick={() => handleEdit(product)}>
+            <Edit className="h-4 w-4 mr-2" />
+            Edit
+          </Button>
+          <Button variant="destructive" onClick={() => handleDelete(product)}>
+            <Trash2 className="h-4 w-4 mr-2" />
+            Delete
+          </Button>
+          <DrawerClose asChild>
+            <Button variant="secondary">Close</Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
+  );
 
   return (
     <div className="space-y-6">
@@ -240,7 +403,7 @@ export default function Products() {
               />
             </div>
           </div>
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -248,11 +411,11 @@ export default function Products() {
                   <TableHead>Image</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Category</TableHead>
-                  <TableHead>Subcategory</TableHead>
-                  <TableHead>Brand</TableHead>
+                  <TableHead className="hidden md:table-cell">Subcategory</TableHead>
+                  <TableHead className="hidden md:table-cell">Brand</TableHead>
                   <TableHead className="text-right">Price</TableHead>
-                  <TableHead className="text-right">Stock</TableHead>
-                  <TableHead>Rating</TableHead>
+                  <TableHead className="text-right hidden md:table-cell">Stock</TableHead>
+                  <TableHead className="hidden md:table-cell">Rating</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -262,69 +425,43 @@ export default function Products() {
                   <TableRow key={product.id}>
                     <TableCell className="font-medium">#{product.id}</TableCell>
                     <TableCell>
-                      <Dialog>
-                        <DialogTrigger>
-                          <div className="h-10 w-10 rounded-md overflow-hidden cursor-pointer">
-                            <img 
-                              src={product.coverImage} 
-                              alt={product.name}
-                              className="h-full w-full object-cover"
-                            />
-                          </div>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
-                          <DialogHeader>
-                            <DialogTitle>Product Images - {product.name}</DialogTitle>
-                            <DialogDescription>
-                              Browse through all product images
-                            </DialogDescription>
-                          </DialogHeader>
-                          <div className="mt-4">
-                            <Carousel className="w-full">
-                              <CarouselContent>
-                                {product.images.map((image, index) => (
-                                  <CarouselItem key={index}>
-                                    <AspectRatio ratio={16/9}>
-                                      <img 
-                                        src={image} 
-                                        alt={`${product.name} - image ${index + 1}`}
-                                        className="rounded-lg object-cover w-full h-full" 
-                                      />
-                                    </AspectRatio>
-                                  </CarouselItem>
-                                ))}
-                              </CarouselContent>
-                              <div className="flex justify-center mt-4 gap-2">
-                                <CarouselPrevious className="relative static" />
-                                <CarouselNext className="relative static" />
-                              </div>
-                            </Carousel>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
+                      <ProductImagesDialog product={product} />
                     </TableCell>
-                    <TableCell>{product.name}</TableCell>
-                    <TableCell>{product.category}</TableCell>
-                    <TableCell>{product.subcategory}</TableCell>
-                    <TableCell className="flex items-center gap-2">
-                      <Tag className="h-4 w-4 text-muted-foreground" />
-                      {product.brand}
+                    <TableCell className="max-w-[150px] truncate">{product.name}</TableCell>
+                    <TableCell className="hidden md:table-cell">{product.category}</TableCell>
+                    <TableCell className="hidden md:table-cell">{product.subcategory}</TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      <div className="flex items-center gap-2">
+                        <Tag className="h-4 w-4 text-muted-foreground" />
+                        {product.brand}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">${product.price.toFixed(2)}</TableCell>
-                    <TableCell className="text-right">{product.stock}</TableCell>
-                    <TableCell>{renderStars(product.rating)}</TableCell>
+                    <TableCell className="text-right hidden md:table-cell">{product.stock}</TableCell>
+                    <TableCell className="hidden md:table-cell">{renderStars(product.rating)}</TableCell>
                     <TableCell>
                       <Badge variant={product.status === "Active" ? "default" : "secondary"}>
                         {product.status}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon">
+                      <div className="flex justify-end gap-1">
+                        <ProductDetailsDrawer product={product} />
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleEdit(product)}
+                        >
                           <Edit className="h-4 w-4" />
                           <span className="sr-only">Edit</span>
                         </Button>
-                        <Button variant="ghost" size="icon">
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => handleDelete(product)}
+                        >
                           <Trash2 className="h-4 w-4" />
                           <span className="sr-only">Delete</span>
                         </Button>

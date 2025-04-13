@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Bell, Search } from "lucide-react";
+import { Bell, Menu, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,10 +13,23 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useSidebar } from "@/components/ui/sidebar";
 
 export default function Header() {
+  const { toggleSidebar } = useSidebar();
+
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={toggleSidebar}
+        className="md:hidden"
+        aria-label="Toggle Sidebar"
+      >
+        <Menu className="h-5 w-5" />
+      </Button>
+      
       <div className="hidden lg:block">
         <h1 className="text-lg font-semibold">Admin Dashboard</h1>
       </div>
