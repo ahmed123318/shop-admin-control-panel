@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Table, 
@@ -33,7 +32,6 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogFooter,
   DialogClose
 } from "@/components/ui/dialog";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
@@ -49,6 +47,7 @@ import {
 } from "@/components/ui/drawer";
 import { useToast } from "@/hooks/use-toast";
 import { useIsMobile } from "@/hooks/use-mobile";
+import ProductForm, { ProductFormValues } from "@/components/products/ProductForm";
 
 const products = [
   {
@@ -200,6 +199,8 @@ const products = [
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(null);
+  const [isAddProductFormOpen, setIsAddProductFormOpen] = useState(false);
+  const [isEditProductFormOpen, setIsEditProductFormOpen] = useState(false);
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -222,12 +223,27 @@ export default function Products() {
     );
   };
 
+  const handleAddProduct = (productData: ProductFormValues) => {
+    console.log('Adding new product:', productData);
+    toast({
+      title: "Product Added",
+      description: `${productData.name} has been added to the catalog.`,
+    });
+    setIsAddProductFormOpen(false);
+  };
+
+  const handleEditProduct = (productData: ProductFormValues) => {
+    console.log('Updating product:', selectedProduct?.id, productData);
+    toast({
+      title: "Product Updated",
+      description: `${productData.name} has been updated.`,
+    });
+    setIsEditProductFormOpen(false);
+  };
+
   const handleEdit = (product) => {
     setSelectedProduct(product);
-    toast({
-      title: "Edit Product",
-      description: `Editing ${product.name}`,
-    });
+    setIsEditProductFormOpen(true);
   };
 
   const handleDelete = (product) => {
@@ -378,11 +394,51 @@ export default function Products() {
             Manage your product inventory
           </p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button 
+          className="flex items-center gap-2"
+          onClick={() => setIsAddProductFormOpen(true)}
+        >
           <Plus className="h-4 w-4" />
           <span>Add Product</span>
         </Button>
       </div>
+
+      <Dialog open={isAddProductFormOpen} onOpenChange={setIsAddProductFormOpen}>
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Add New Product</DialogTitle>
+            <DialogDescription>
+              Fill in the details to add a new product to your inventory.
+            </DialogDescription>
+          </DialogHeader>
+          <ProductForm 
+            onSubmit={handleAddProduct} 
+            onCancel={() => setIsAddProductFormOpen(false)} 
+          />
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isEditProductFormOpen} onOpenChange={setIsEditProductFormOpen}>
+        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Product</DialogTitle>
+            <DialogDescription>
+              Update the details of {selectedProduct?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedProduct && (
+            <ProductForm 
+              initialValues={{
+                ...selectedProduct,
+                price: String(selectedProduct.price),
+                stock: String(selectedProduct.stock),
+              }} 
+              onSubmit={handleEditProduct} 
+              onCancel={() => setIsEditProductFormOpen(false)} 
+            />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardHeader className="pb-3">
