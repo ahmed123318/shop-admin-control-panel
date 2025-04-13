@@ -15,10 +15,26 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
+import { 
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Edit, Trash2, Search, Tag, Star } from "lucide-react";
+import { Plus, Edit, Trash2, Search, Tag, Star, Image } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 const products = [
   {
@@ -31,7 +47,13 @@ const products = [
     stock: 15,
     reviewCount: 28,
     rating: 4.7,
-    status: "Active"
+    status: "Active",
+    coverImage: "https://source.unsplash.com/featured/?macbook",
+    images: [
+      "https://source.unsplash.com/featured/?macbook",
+      "https://source.unsplash.com/featured/?laptop",
+      "https://source.unsplash.com/featured/?apple"
+    ]
   },
   {
     id: 2,
@@ -43,7 +65,13 @@ const products = [
     stock: 28,
     reviewCount: 42,
     rating: 4.5,
-    status: "Active"
+    status: "Active",
+    coverImage: "https://source.unsplash.com/featured/?samsung",
+    images: [
+      "https://source.unsplash.com/featured/?samsung",
+      "https://source.unsplash.com/featured/?smartphone",
+      "https://source.unsplash.com/featured/?galaxy"
+    ]
   },
   {
     id: 3,
@@ -55,7 +83,13 @@ const products = [
     stock: 45,
     reviewCount: 19,
     rating: 4.2,
-    status: "Active"
+    status: "Active",
+    coverImage: "https://source.unsplash.com/featured/?jeans",
+    images: [
+      "https://source.unsplash.com/featured/?jeans",
+      "https://source.unsplash.com/featured/?denim",
+      "https://source.unsplash.com/featured/?levis"
+    ]
   },
   {
     id: 4,
@@ -67,7 +101,13 @@ const products = [
     stock: 32,
     reviewCount: 35,
     rating: 4.6,
-    status: "Active"
+    status: "Active",
+    coverImage: "https://source.unsplash.com/featured/?nike",
+    images: [
+      "https://source.unsplash.com/featured/?nike",
+      "https://source.unsplash.com/featured/?sneakers",
+      "https://source.unsplash.com/featured/?shoes"
+    ]
   },
   {
     id: 5,
@@ -79,7 +119,13 @@ const products = [
     stock: 0,
     reviewCount: 52,
     rating: 4.8,
-    status: "Out of Stock"
+    status: "Out of Stock",
+    coverImage: "https://source.unsplash.com/featured/?playstation",
+    images: [
+      "https://source.unsplash.com/featured/?playstation",
+      "https://source.unsplash.com/featured/?console",
+      "https://source.unsplash.com/featured/?gaming"
+    ]
   },
   {
     id: 6,
@@ -91,7 +137,13 @@ const products = [
     stock: 62,
     reviewCount: 78,
     rating: 4.3,
-    status: "Active"
+    status: "Active",
+    coverImage: "https://source.unsplash.com/featured/?echo",
+    images: [
+      "https://source.unsplash.com/featured/?echo",
+      "https://source.unsplash.com/featured/?alexa",
+      "https://source.unsplash.com/featured/?smart-speaker"
+    ]
   },
   {
     id: 7,
@@ -103,7 +155,13 @@ const products = [
     stock: 120,
     reviewCount: 12,
     rating: 4.1,
-    status: "Active"
+    status: "Active",
+    coverImage: "https://source.unsplash.com/featured/?tshirt",
+    images: [
+      "https://source.unsplash.com/featured/?tshirt",
+      "https://source.unsplash.com/featured/?cotton",
+      "https://source.unsplash.com/featured/?organic-clothing"
+    ]
   },
   {
     id: 8,
@@ -115,12 +173,19 @@ const products = [
     stock: 5,
     reviewCount: 8,
     rating: 4.0,
-    status: "Active"
+    status: "Active",
+    coverImage: "https://source.unsplash.com/featured/?sofa",
+    images: [
+      "https://source.unsplash.com/featured/?sofa",
+      "https://source.unsplash.com/featured/?leather-sofa",
+      "https://source.unsplash.com/featured/?furniture"
+    ]
   }
 ];
 
 export default function Products() {
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedProduct, setSelectedProduct] = useState(null);
 
   const filteredProducts = searchTerm 
     ? products.filter(product => 
@@ -180,6 +245,7 @@ export default function Products() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[80px]">ID</TableHead>
+                  <TableHead>Image</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Category</TableHead>
                   <TableHead>Subcategory</TableHead>
@@ -195,6 +261,48 @@ export default function Products() {
                 {filteredProducts.map(product => (
                   <TableRow key={product.id}>
                     <TableCell className="font-medium">#{product.id}</TableCell>
+                    <TableCell>
+                      <Dialog>
+                        <DialogTrigger>
+                          <div className="h-10 w-10 rounded-md overflow-hidden cursor-pointer">
+                            <img 
+                              src={product.coverImage} 
+                              alt={product.name}
+                              className="h-full w-full object-cover"
+                            />
+                          </div>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-md">
+                          <DialogHeader>
+                            <DialogTitle>Product Images - {product.name}</DialogTitle>
+                            <DialogDescription>
+                              Browse through all product images
+                            </DialogDescription>
+                          </DialogHeader>
+                          <div className="mt-4">
+                            <Carousel className="w-full">
+                              <CarouselContent>
+                                {product.images.map((image, index) => (
+                                  <CarouselItem key={index}>
+                                    <AspectRatio ratio={16/9}>
+                                      <img 
+                                        src={image} 
+                                        alt={`${product.name} - image ${index + 1}`}
+                                        className="rounded-lg object-cover w-full h-full" 
+                                      />
+                                    </AspectRatio>
+                                  </CarouselItem>
+                                ))}
+                              </CarouselContent>
+                              <div className="flex justify-center mt-4 gap-2">
+                                <CarouselPrevious className="relative static" />
+                                <CarouselNext className="relative static" />
+                              </div>
+                            </Carousel>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    </TableCell>
                     <TableCell>{product.name}</TableCell>
                     <TableCell>{product.category}</TableCell>
                     <TableCell>{product.subcategory}</TableCell>
