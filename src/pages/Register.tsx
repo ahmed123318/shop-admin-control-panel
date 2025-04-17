@@ -1,189 +1,150 @@
 
 import React, { useState } from "react";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AtSign, Lock, User, Loader2, UserPlus } from "lucide-react";
-
-import { Button } from "@/components/ui/button";
+import * as z from "zod";
 import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { Progress } from "@/components/ui/progress";
-import AuthLayout from "@/components/layout/AuthLayout";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
-import { usePasswordStrength } from "@/hooks/use-password-strength";
 
-const registerSchema = z
-  .object({
-    name: z.string().min(2, "Name must be at least 2 characters"),
-    email: z.string().email("Please enter a valid email address"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
-
-type RegisterFormValues = z.infer<typeof registerSchema>;
+// Modify the schema to handle password strength
+const registerSchema = z.object({
+  fullName: z.string().min(2, "Full name must be at least 2 characters"),
+  email: z.string().email("Invalid email address"),
+  password: z.string()
+    .min(6, "Password must be at least 6 characters")
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, "Password must include uppercase, lowercase, and number"),
+  confirmPassword: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
 
 export default function Register() {
-  const { register, loading } = useAuth();
-  const [passwordValue, setPasswordValue] = useState("");
-  const { getColor, getPercentage, message } = usePasswordStrength(passwordValue);
-  
-  const form = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-    },
+  const { register: authRegister } = useAuth();
+  const { 
+    register, 
+    handleSubmit, 
+    watch, 
+    formState: { errors } 
+  } = useForm<z.infer<typeof registerSchema>>({
+    resolver: zodResolver(registerSchema)
   });
 
-  async function onSubmit(values: RegisterFormValues) {
-    await register(values.name, values.email, values.password);
-  }
+  const [passwordStrength, setPasswordStrength] = useState(0);
+
+  const calculatePasswordStrength = (password: string) => {
+    let strength = 0;
+    if (password.length >= 6) strength += 1;
+    if (/[A-Z]/.test(password)) strength += 1;
+    if (/[a-z]/.test(password)) strength += 1;
+    if (/\d/.test(password)) strength += 1;
+    if (/[!@#$%^&*]/.test(password)) strength += 1;
+    return Math.min(strength, 5); // Cap at 5
+  };
+
+  const onSubmit = async (data: z.infer<typeof registerSchema>) => {
+    try {
+      await authRegister(data.email, data.password, data.fullName);
+      toast({
+        title: "Registration Successful",
+        description: "You have been registered successfully!",
+      });
+      // Redirect or handle successful registration
+    } catch (error) {
+      toast({
+        title: "Registration Error",
+        description: error instanceof Error ? error.message : "An error occurred",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Watch password to update strength
+  const passwordValue = watch("password");
+  React.useEffect(() => {
+    setPasswordStrength(calculatePasswordStrength(passwordValue || ""));
+  }, [passwordValue]);
 
   return (
-    <AuthLayout 
-      title="Create an account"
-      subtitle="Enter your information to get started"
-      footer={
-        <p className="text-sm text-muted-foreground">
-          Already have an account?{" "}
-          <Link to="/login" className="text-primary font-medium hover:underline">
-            Sign in
-          </Link>
-        </p>
-      }
-    >
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Full Name</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <User className="absolute left-2.5 top-2.5 h-5 w-5 text-muted-foreground" />
-                    <Input
-                      placeholder="John Doe"
-                      className="pl-9"
-                      {...field}
-                      disabled={loading}
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-lg shadow-md">
+        <h2 className="text-2xl font-bold text-center">Register</h2>
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+          {/* Full Name Input */}
+          <div>
+            <Input 
+              {...register("fullName")}
+              placeholder="Full Name" 
+              type="text"
+            />
+            {errors.fullName && (
+              <p className="text-destructive text-sm mt-1">
+                {errors.fullName.message}
+              </p>
             )}
-          />
+          </div>
 
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <AtSign className="absolute left-2.5 top-2.5 h-5 w-5 text-muted-foreground" />
-                    <Input
-                      placeholder="name@example.com"
-                      className="pl-9"
-                      {...field}
-                      disabled={loading}
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+          {/* Email Input */}
+          <div>
+            <Input 
+              {...register("email")}
+              placeholder="Email" 
+              type="email"
+            />
+            {errors.email && (
+              <p className="text-destructive text-sm mt-1">
+                {errors.email.message}
+              </p>
             )}
-          />
+          </div>
 
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Password</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Lock className="absolute left-2.5 top-2.5 h-5 w-5 text-muted-foreground" />
-                    <Input
-                      type="password"
-                      placeholder="••••••••"
-                      className="pl-9"
-                      {...field}
-                      onChange={(e) => {
-                        setPasswordValue(e.target.value);
-                        field.onChange(e);
-                      }}
-                      disabled={loading}
-                    />
-                  </div>
-                </FormControl>
-                {passwordValue && (
-                  <div className="mt-2">
-                    <Progress value={getPercentage()} className={`h-2 ${getColor()}`} />
-                    <p className="text-xs mt-1 text-muted-foreground">{message}</p>
-                  </div>
-                )}
-                <FormMessage />
-              </FormItem>
+          {/* Password Input */}
+          <div>
+            <Input 
+              {...register("password")}
+              placeholder="Password" 
+              type="password"
+            />
+            {/* Password Strength Indicator */}
+            <div className="h-1 w-full bg-gray-200 mt-1">
+              <div 
+                className={`h-full transition-all duration-300 ${
+                  passwordStrength === 1 ? 'bg-red-500 w-1/5' :
+                  passwordStrength === 2 ? 'bg-orange-500 w-2/5' :
+                  passwordStrength === 3 ? 'bg-yellow-500 w-3/5' :
+                  passwordStrength === 4 ? 'bg-green-500 w-4/5' :
+                  passwordStrength === 5 ? 'bg-green-600 w-full' : 'bg-gray-200 w-0'
+                }`}
+              />
+            </div>
+            {errors.password && (
+              <p className="text-destructive text-sm mt-1">
+                {errors.password.message}
+              </p>
             )}
-          />
+          </div>
 
-          <FormField
-            control={form.control}
-            name="confirmPassword"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Confirm Password</FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Lock className="absolute left-2.5 top-2.5 h-5 w-5 text-muted-foreground" />
-                    <Input
-                      type="password"
-                      placeholder="••••••••"
-                      className="pl-9"
-                      {...field}
-                      disabled={loading}
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+          {/* Confirm Password Input */}
+          <div>
+            <Input 
+              {...register("confirmPassword")}
+              placeholder="Confirm Password" 
+              type="password"
+            />
+            {errors.confirmPassword && (
+              <p className="text-destructive text-sm mt-1">
+                {errors.confirmPassword.message}
+              </p>
             )}
-          />
+          </div>
 
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Creating account...
-              </>
-            ) : (
-              <>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Create account
-              </>
-            )}
+          <Button type="submit" className="w-full">
+            Register
           </Button>
         </form>
-      </Form>
-    </AuthLayout>
+      </div>
+    </div>
   );
 }
