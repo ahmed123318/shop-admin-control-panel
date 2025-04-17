@@ -1,5 +1,6 @@
 
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -7,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import AuthLayout from "@/components/layout/AuthLayout";
+import { usePasswordStrength } from "@/hooks/use-password-strength";
 
 // Modify the schema to handle password strength
 const registerSchema = z.object({
@@ -32,17 +35,8 @@ export default function Register() {
     resolver: zodResolver(registerSchema)
   });
 
-  const [passwordStrength, setPasswordStrength] = useState(0);
-
-  const calculatePasswordStrength = (password: string) => {
-    let strength = 0;
-    if (password.length >= 6) strength += 1;
-    if (/[A-Z]/.test(password)) strength += 1;
-    if (/[a-z]/.test(password)) strength += 1;
-    if (/\d/.test(password)) strength += 1;
-    if (/[!@#$%^&*]/.test(password)) strength += 1;
-    return Math.min(strength, 5); // Cap at 5
-  };
+  const passwordValue = watch("password") || "";
+  const { strength, message, getColor, getPercentage } = usePasswordStrength(passwordValue);
 
   const onSubmit = async (data: z.infer<typeof registerSchema>) => {
     try {
@@ -61,90 +55,93 @@ export default function Register() {
     }
   };
 
-  // Watch password to update strength
-  const passwordValue = watch("password");
-  React.useEffect(() => {
-    setPasswordStrength(calculatePasswordStrength(passwordValue || ""));
-  }, [passwordValue]);
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold text-center">Register</h2>
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-          {/* Full Name Input */}
-          <div>
-            <Input 
-              {...register("fullName")}
-              placeholder="Full Name" 
-              type="text"
-            />
-            {errors.fullName && (
-              <p className="text-destructive text-sm mt-1">
-                {errors.fullName.message}
-              </p>
-            )}
-          </div>
+    <AuthLayout 
+      title="Create an account" 
+      subtitle="Enter your information to get started"
+      footer={
+        <p className="text-sm text-muted-foreground">
+          Already have an account?{" "}
+          <Link to="/login" className="text-primary hover:underline">
+            Sign in
+          </Link>
+        </p>
+      }
+    >
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+        {/* Full Name Input */}
+        <div>
+          <Input 
+            {...register("fullName")}
+            placeholder="Full Name" 
+            type="text"
+          />
+          {errors.fullName && (
+            <p className="text-destructive text-sm mt-1">
+              {errors.fullName.message}
+            </p>
+          )}
+        </div>
 
-          {/* Email Input */}
-          <div>
-            <Input 
-              {...register("email")}
-              placeholder="Email" 
-              type="email"
-            />
-            {errors.email && (
-              <p className="text-destructive text-sm mt-1">
-                {errors.email.message}
-              </p>
-            )}
-          </div>
+        {/* Email Input */}
+        <div>
+          <Input 
+            {...register("email")}
+            placeholder="Email" 
+            type="email"
+          />
+          {errors.email && (
+            <p className="text-destructive text-sm mt-1">
+              {errors.email.message}
+            </p>
+          )}
+        </div>
 
-          {/* Password Input */}
-          <div>
-            <Input 
-              {...register("password")}
-              placeholder="Password" 
-              type="password"
-            />
-            {/* Password Strength Indicator */}
-            <div className="h-1 w-full bg-gray-200 mt-1">
-              <div 
-                className={`h-full transition-all duration-300 ${
-                  passwordStrength === 1 ? 'bg-red-500 w-1/5' :
-                  passwordStrength === 2 ? 'bg-orange-500 w-2/5' :
-                  passwordStrength === 3 ? 'bg-yellow-500 w-3/5' :
-                  passwordStrength === 4 ? 'bg-green-500 w-4/5' :
-                  passwordStrength === 5 ? 'bg-green-600 w-full' : 'bg-gray-200 w-0'
-                }`}
-              />
+        {/* Password Input */}
+        <div>
+          <Input 
+            {...register("password")}
+            placeholder="Password" 
+            type="password"
+          />
+          {passwordValue && (
+            <div className="mt-1">
+              <div className="h-1 w-full bg-gray-200">
+                <div 
+                  className={`h-full transition-all duration-300 ${getColor()}`}
+                  style={{ width: getPercentage() }}
+                />
+              </div>
+              {message && (
+                <p className="text-xs mt-1 text-muted-foreground">{message}</p>
+              )}
             </div>
-            {errors.password && (
-              <p className="text-destructive text-sm mt-1">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
+          )}
+          {errors.password && (
+            <p className="text-destructive text-sm mt-1">
+              {errors.password.message}
+            </p>
+          )}
+        </div>
 
-          {/* Confirm Password Input */}
-          <div>
-            <Input 
-              {...register("confirmPassword")}
-              placeholder="Confirm Password" 
-              type="password"
-            />
-            {errors.confirmPassword && (
-              <p className="text-destructive text-sm mt-1">
-                {errors.confirmPassword.message}
-              </p>
-            )}
-          </div>
+        {/* Confirm Password Input */}
+        <div>
+          <Input 
+            {...register("confirmPassword")}
+            placeholder="Confirm Password" 
+            type="password"
+          />
+          {errors.confirmPassword && (
+            <p className="text-destructive text-sm mt-1">
+              {errors.confirmPassword.message}
+            </p>
+          )}
+        </div>
 
-          <Button type="submit" className="w-full">
-            Register
-          </Button>
-        </form>
-      </div>
-    </div>
+        <Button type="submit" className="w-full">
+          Register
+        </Button>
+      </form>
+    </AuthLayout>
   );
 }

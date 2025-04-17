@@ -135,13 +135,25 @@ interface SidebarMenuButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEl
   asChild?: boolean
 }
 
+// Fixed type error by properly handling the conditional ref based on asChild
 const SidebarMenuButton = React.forwardRef<
   HTMLButtonElement,
   SidebarMenuButtonProps
->(({ className, asChild, ...props }, ref) => {
-  const Comp = asChild ? "div" : "button"
+>(({ className, asChild = false, ...props }, ref) => {
+  if (asChild) {
+    return (
+      <div
+        className={cn(
+          "group relative flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-secondary hover:text-foreground focus:bg-secondary focus:text-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+          className
+        )}
+        {...props}
+      />
+    )
+  }
+  
   return (
-    <Comp
+    <button
       ref={ref}
       className={cn(
         "group relative flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-secondary hover:text-foreground focus:bg-secondary focus:text-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50",
