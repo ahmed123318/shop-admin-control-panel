@@ -1,4 +1,3 @@
-
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -126,20 +125,18 @@ export default function AdminSidebar() {
             <SidebarMenu>
               {menuItems.slice(0, 5).map((item) => (
                 <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton
-                    asChild
+                  <Link 
+                    to={item.path}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-md",
+                      "flex items-center gap-3 px-3 py-2 rounded-md w-full text-sm font-medium",
                       location.pathname === item.path
                         ? "bg-sidebar-accent text-white"
                         : "hover:bg-sidebar-accent/50"
                     )}
                   >
-                    <Link to={item.path} className="flex items-center gap-3">
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
+                    <item.icon className="h-5 w-5" />
+                    <span>{item.title}</span>
+                  </Link>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -152,20 +149,18 @@ export default function AdminSidebar() {
             <SidebarMenu>
               {menuItems.slice(5, 8).map((item) => (
                 <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton
-                    asChild
+                  <Link 
+                    to={item.path} 
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-md",
+                      "flex items-center gap-3 px-3 py-2 rounded-md w-full text-sm font-medium",
                       location.pathname === item.path
                         ? "bg-sidebar-accent text-white"
                         : "hover:bg-sidebar-accent/50"
                     )}
                   >
-                    <Link to={item.path} className="flex items-center gap-3">
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
+                    <item.icon className="h-5 w-5" />
+                    <span>{item.title}</span>
+                  </Link>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -178,20 +173,18 @@ export default function AdminSidebar() {
             <SidebarMenu>
               {menuItems.slice(8, 12).map((item) => (
                 <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton
-                    asChild
+                  <Link 
+                    to={item.path}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-md",
+                      "flex items-center gap-3 px-3 py-2 rounded-md w-full text-sm font-medium",
                       location.pathname === item.path
                         ? "bg-sidebar-accent text-white"
                         : "hover:bg-sidebar-accent/50"
                     )}
                   >
-                    <Link to={item.path} className="flex items-center gap-3">
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
+                    <item.icon className="h-5 w-5" />
+                    <span>{item.title}</span>
+                  </Link>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
@@ -204,20 +197,18 @@ export default function AdminSidebar() {
             <SidebarMenu>
               {menuItems.slice(12).map((item) => (
                 <SidebarMenuItem key={item.path}>
-                  <SidebarMenuButton
-                    asChild
+                  <Link 
+                    to={item.path}
                     className={cn(
-                      "flex items-center gap-3 px-3 py-2 rounded-md",
+                      "flex items-center gap-3 px-3 py-2 rounded-md w-full text-sm font-medium",
                       location.pathname === item.path
                         ? "bg-sidebar-accent text-white"
                         : "hover:bg-sidebar-accent/50"
                     )}
                   >
-                    <Link to={item.path} className="flex items-center gap-3">
-                      <item.icon className="h-5 w-5" />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
+                    <item.icon className="h-5 w-5" />
+                    <span>{item.title}</span>
+                  </Link>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

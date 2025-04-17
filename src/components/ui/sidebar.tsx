@@ -1,5 +1,9 @@
+
 import * as React from "react"
 import { createContext, useContext, useState } from "react"
+import * as Collapsible from "@radix-ui/react-collapsible"
+
+import { cn } from "@/lib/utils"
 
 // Define the shape of the context
 interface SidebarContextType {
@@ -36,11 +40,6 @@ export function useSidebar() {
   }
   return context;
 }
-
-import * as React from "react"
-import * as Collapsible from "@radix-ui/react-collapsible"
-
-import { cn } from "@/lib/utils"
 
 const Sidebar = React.forwardRef<
   HTMLDivElement,
@@ -132,19 +131,26 @@ const SidebarMenuItem = React.forwardRef<
 ))
 SidebarMenuItem.displayName = "SidebarMenuItem"
 
+interface SidebarMenuButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  asChild?: boolean
+}
+
 const SidebarMenuButton = React.forwardRef<
   HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement>
->(({ className, ...props }, ref) => (
-  <button
-    ref={ref}
-    className={cn(
-      "group relative flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-secondary hover:text-foreground focus:bg-secondary focus:text-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50",
-      className
-    )}
-    {...props}
-  />
-))
+  SidebarMenuButtonProps
+>(({ className, asChild, ...props }, ref) => {
+  const Comp = asChild ? "div" : "button"
+  return (
+    <Comp
+      ref={ref}
+      className={cn(
+        "group relative flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-secondary hover:text-foreground focus:bg-secondary focus:text-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50",
+        className
+      )}
+      {...props}
+    />
+  )
+})
 SidebarMenuButton.displayName = "SidebarMenuButton"
 
 const SidebarTrigger = React.forwardRef<
