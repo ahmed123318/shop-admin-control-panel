@@ -1,23 +1,19 @@
-
 import * as React from "react"
 import { createContext, useContext, useState } from "react"
 import * as Collapsible from "@radix-ui/react-collapsible"
 
 import { cn } from "@/lib/utils"
 
-// Define the shape of the context
 interface SidebarContextType {
   isOpen: boolean;
   toggleOpen: () => void;
 }
 
-// Create the context with a default value
 const SidebarContext = createContext<SidebarContextType>({
   isOpen: true,
   toggleOpen: () => {}
 });
 
-// Provider component
 export function SidebarProvider({ children }: { children: React.ReactNode }) {
   const [isOpen, setIsOpen] = useState(true);
 
@@ -32,7 +28,6 @@ export function SidebarProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Custom hook to use the sidebar context
 export function useSidebar() {
   const context = useContext(SidebarContext);
   if (!context) {
@@ -135,25 +130,13 @@ interface SidebarMenuButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEl
   asChild?: boolean
 }
 
-// Fixed type error by properly handling the conditional ref based on asChild
 const SidebarMenuButton = React.forwardRef<
   HTMLButtonElement,
   SidebarMenuButtonProps
 >(({ className, asChild = false, ...props }, ref) => {
-  if (asChild) {
-    return (
-      <div
-        className={cn(
-          "group relative flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-secondary hover:text-foreground focus:bg-secondary focus:text-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50",
-          className
-        )}
-        {...props}
-      />
-    )
-  }
-  
+  const Comp = asChild ? 'div' : 'button';
   return (
-    <button
+    <Comp
       ref={ref}
       className={cn(
         "group relative flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-secondary hover:text-foreground focus:bg-secondary focus:text-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50",
@@ -161,8 +144,8 @@ const SidebarMenuButton = React.forwardRef<
       )}
       {...props}
     />
-  )
-})
+  );
+});
 SidebarMenuButton.displayName = "SidebarMenuButton"
 
 const SidebarTrigger = React.forwardRef<
