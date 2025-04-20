@@ -132,7 +132,9 @@ interface SidebarMenuButtonProps extends React.ButtonHTMLAttributes<HTMLButtonEl
 
 const SidebarMenuButton = React.forwardRef<
   HTMLButtonElement,
-  SidebarMenuButtonProps
+  React.ButtonHTMLAttributes<HTMLButtonElement> & {
+    asChild?: boolean
+  }
 >(({ className, asChild = false, ...props }, ref) => {
   const Comp = asChild ? 'div' : 'button';
   return (
@@ -146,7 +148,7 @@ const SidebarMenuButton = React.forwardRef<
     />
   );
 });
-SidebarMenuButton.displayName = "SidebarMenuButton"
+SidebarMenuButton.displayName = "SidebarMenuButton";
 
 const SidebarTrigger = React.forwardRef<
   HTMLButtonElement,

@@ -12,8 +12,10 @@ export default function AdminLayout() {
         <AdminSidebar />
         <div className="flex flex-col flex-1 overflow-hidden">
           <Header />
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6">
-            <Outlet />
+          <main className="flex-1 overflow-y-auto bg-background/50 p-4 sm:p-6 animate-in">
+            <div className="container max-w-7xl mx-auto">
+              <Outlet />
+            </div>
           </main>
         </div>
       </div>
