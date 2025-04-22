@@ -1,5 +1,7 @@
-
 import React, { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { fetchUsers } from "@/services/api";
+import { Loader } from "lucide-react";
 import { 
   Table, 
   TableBody, 
@@ -124,19 +126,39 @@ const initialUsers: User[] = [
 
 export default function Users() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [users, setUsers] = useState<User[]>(initialUsers);
+  const { data: users = [], isLoading, error } = useQuery({
+    queryKey: ['users'],
+    queryFn: fetchUsers,
+  });
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const { toast } = useToast();
 
+  // Filter users based on search term
   const filteredUsers = searchTerm 
     ? users.filter(user => 
         user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
         user.email.toLowerCase().includes(searchTerm.toLowerCase())
       )
     : users;
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-destructive">Error loading users</div>
+      </div>
+    );
+  }
 
   // Form for creating and updating users
   const form = useForm<UserFormValues>({

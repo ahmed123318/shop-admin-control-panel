@@ -1,184 +1,193 @@
-import * as React from "react"
-import { createContext, useContext, useState } from "react"
-import * as Collapsible from "@radix-ui/react-collapsible"
+"use client";
 
-import { cn } from "@/lib/utils"
+import * as React from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
+import {
+  Sheet,
+  SheetContent,
+  SheetTrigger,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import { Menu } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface SidebarContextType {
-  isOpen: boolean;
-  toggleOpen: () => void;
+interface SidebarProps {
+  className?: string;
+  children: React.ReactNode;
 }
 
-const SidebarContext = createContext<SidebarContextType>({
-  isOpen: true,
-  toggleOpen: () => {}
-});
+interface SidebarContextType {
+  collapsed: boolean;
+  setCollapsed: React.Dispatch<React.SetStateAction<boolean>>;
+}
 
-export function SidebarProvider({ children }: { children: React.ReactNode }) {
-  const [isOpen, setIsOpen] = useState(true);
+const SidebarContext = createContext<SidebarContextType | null>(null);
 
-  const toggleOpen = () => {
-    setIsOpen(prev => !prev);
-  };
+export function Sidebar({ className, children }: SidebarProps) {
+  const [collapsed, setCollapsed] = useState(false);
+  const ref = useRef<HTMLButtonElement | HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        ref.current &&
+        !ref.current.contains(event.target as Node) &&
+        window.innerWidth < 768
+      ) {
+        setCollapsed(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [ref, setCollapsed]);
 
   return (
-    <SidebarContext.Provider value={{ isOpen, toggleOpen }}>
-      {children}
+    <SidebarContext.Provider value={{ collapsed, setCollapsed }}>
+      <div
+        ref={ref as React.RefObject<HTMLDivElement>}
+        className={cn(className, "relative")}
+      >
+        {children}
+      </div>
     </SidebarContext.Provider>
   );
 }
 
-export function useSidebar() {
+interface SidebarTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
+
+export function SidebarTrigger({ className, align = "start", ...props }: SidebarTriggerProps) {
+  const { collapsed, setCollapsed } = useSidebarContext();
+
+  return (
+    <Button
+      variant="ghost"
+      className={cn(
+        "md:hidden h-10 w-10 p-0",
+        align === "end" && "ml-auto",
+        className
+      )}
+      onClick={() => setCollapsed(!collapsed)}
+      {...props}
+    >
+      <Menu className="h-5 w-5" />
+      <span className="sr-only">Toggle Menu</span>
+    </Button>
+  );
+}
+
+interface SidebarContentProps {
+  className?: string;
+}
+
+export function SidebarContent({ className }: SidebarContentProps) {
+  const { collapsed, setCollapsed } = useSidebarContext();
+
+  return (
+    <Sheet open={collapsed} onOpenChange={setCollapsed}>
+      <SheetTrigger asChild>
+        <Button variant="ghost" className="md:hidden h-10 w-10 p-0">
+          <Menu className="h-5 w-5" />
+          <span className="sr-only">Toggle Menu</span>
+        </Button>
+      </SheetTrigger>
+      <SheetContent
+        side="left"
+        className={cn(
+          "fixed md:static z-50 flex flex-col top-0 left-0 h-screen md:max-w-sm  border-r bg-secondary text-secondary-foreground w-3/4",
+          collapsed ? "translate-x-0" : "-translate-x-full",
+          className
+        )}
+      >
+        <SidebarHeader />
+        <SidebarMenu />
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+interface SidebarHeaderProps {
+  className?: string;
+}
+
+export function SidebarHeader({ className }: SidebarHeaderProps) {
+  return (
+    <div className={cn("flex items-center py-4 px-6 h-16 shrink-0", className)}>
+      <SheetHeader className="pl-0 pb-4">
+        <SheetTitle>Dashboard</SheetTitle>
+        <SheetDescription>
+          Manage your store and track performance
+        </SheetDescription>
+      </SheetHeader>
+    </div>
+  );
+}
+
+const sidebarItems = [
+  { href: "/", label: "Dashboard" },
+  { href: "/products", label: "Products" },
+  { href: "/categories", label: "Categories" },
+  { href: "/subcategories", label: "Subcategories" },
+  { href: "/brands", label: "Brands" },
+  { href: "/orders", label: "Orders" },
+  { href: "/customers", label: "Customers" },
+  { href: "/users", label: "Users" },
+  { href: "/reviews", label: "Reviews" },
+  { href: "/coupons", label: "Coupons" },
+  { href: "/suppliers", label: "Suppliers" },
+  { href: "/taxes", label: "Taxes" },
+  { href: "/analytics", label: "Analytics" },
+  { href: "/settings", label: "Settings" },
+];
+
+interface SidebarMenuProps {
+  className?: string;
+}
+
+export function SidebarMenu({ className }: SidebarMenuProps) {
+  const location = useLocation();
+
+  return (
+    <div className={cn("flex flex-col gap-2 py-4 px-6", className)}>
+      {sidebarItems.map((item) => (
+        <SidebarMenuItem
+          key={item.href}
+          href={item.href}
+          label={item.label}
+          active={location.pathname === item.href}
+        />
+      ))}
+    </div>
+  );
+}
+
+interface SidebarMenuItemProps {
+  href: string;
+  label: string;
+  active?: boolean;
+}
+
+export function SidebarMenuItem({ href, label, active }: SidebarMenuItemProps) {
+  return (
+    <Link to={href}>
+      <Button variant={active ? "secondary" : "ghost"} className="w-full justify-start">
+        {label}
+      </Button>
+    </Link>
+  );
+}
+
+export function useSidebarContext() {
   const context = useContext(SidebarContext);
   if (!context) {
-    throw new Error("useSidebar must be used within a SidebarProvider");
+    throw new Error("useSidebarContext must be used within a <Sidebar />");
   }
   return context;
-}
-
-const Sidebar = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "group relative flex h-screen w-64 grow-0 flex-col overflow-y-auto border-r bg-background py-4 transition-all duration-300",
-      className
-    )}
-    {...props}
-  />
-))
-Sidebar.displayName = "Sidebar"
-
-const SidebarHeader = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("flex h-16 items-center px-4", className)}
-    {...props}
-  />
-))
-SidebarHeader.displayName = "SidebarHeader"
-
-const SidebarContent = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("flex flex-1 flex-col gap-2 px-2", className)}
-    {...props}
-  />
-))
-SidebarContent.displayName = "SidebarContent"
-
-const SidebarGroup = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn("flex flex-col space-y-1", className)}
-    {...props}
-  />
-))
-SidebarGroup.displayName = "SidebarGroup"
-
-const SidebarGroupLabel = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div
-    ref={ref}
-    className={cn(
-      "text-sm font-semibold text-muted-foreground",
-      className
-    )}
-    {...props}
-  />
-))
-SidebarGroupLabel.displayName = "SidebarGroupLabel"
-
-const SidebarGroupContent = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("mt-2", className)} {...props} />
-))
-SidebarGroupContent.displayName = "SidebarGroupContent"
-
-const SidebarMenu = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("flex flex-col gap-1", className)} {...props} />
-))
-SidebarMenu.displayName = "SidebarMenu"
-
-const SidebarMenuItem = React.forwardRef<
-  HTMLDivElement,
-  React.HTMLAttributes<HTMLDivElement>
->(({ className, ...props }, ref) => (
-  <div ref={ref} className={cn("", className)} {...props} />
-))
-SidebarMenuItem.displayName = "SidebarMenuItem"
-
-interface SidebarMenuButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  asChild?: boolean
-}
-
-const SidebarMenuButton = React.forwardRef<
-  HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement> & {
-    asChild?: boolean
-  }
->(({ className, asChild = false, ...props }, ref) => {
-  const Comp = asChild ? 'div' : 'button';
-  return (
-    <Comp
-      ref={ref}
-      className={cn(
-        "group relative flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-secondary hover:text-foreground focus:bg-secondary focus:text-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50",
-        className
-      )}
-      {...props}
-    />
-  );
-});
-SidebarMenuButton.displayName = "SidebarMenuButton";
-
-const SidebarTrigger = React.forwardRef<
-  HTMLButtonElement,
-  React.ButtonHTMLAttributes<HTMLButtonElement>
->(({ className, ...props }, ref) => {
-  const { isOpen, toggleOpen } = useSidebar()
-  return (
-    <button
-      ref={ref}
-      className={cn(
-        "group relative flex h-10 w-10 items-center justify-center rounded-md border border-border transition-colors hover:bg-secondary hover:text-foreground focus:bg-secondary focus:text-foreground focus:outline-none disabled:cursor-not-allowed disabled:opacity-50",
-        className
-      )}
-      onClick={toggleOpen}
-      aria-expanded={isOpen}
-      {...props}
-    />
-  )
-})
-SidebarTrigger.displayName = "SidebarTrigger"
-
-export {
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarTrigger,
 }
