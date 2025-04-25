@@ -1,73 +1,14 @@
 import React, { useState } from "react";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
-} from "@/components/ui/table";
-import { 
-  Card, 
-  CardContent, 
-  CardDescription, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogClose
-} from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
-import { useForm } from "react-hook-form";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Plus, Edit, Trash2, FolderOpen, Search } from "lucide-react";
-
-const categoryFormSchema = z.object({
-  name: z.string().min(2, "Category name must be at least 2 characters"),
-  slug: z.string().min(2, "Slug must be at least 2 characters"),
-  status: z.enum(["Active", "Inactive"]),
-  image: z.string().optional()
-});
-
-type CategoryFormValues = z.infer<typeof categoryFormSchema>;
-
-interface Category {
-  id: number;
-  name: string;
-  slug: string;
-  products: number;
-  subcategories: number;
-  status: "Active" | "Inactive";
-  image: string;
-}
+import { Category, CategoryFormValues } from "@/types/category";
+import { CategoryForm } from "@/components/categories/CategoryForm";
+import { CategoriesTable } from "@/components/categories/CategoriesTable";
+import { CategorySearch } from "@/components/categories/CategorySearch";
 
 const initialCategories: Category[] = [
   {
@@ -150,27 +91,6 @@ export default function Categories() {
       )
     : categories;
 
-  const form = useForm<CategoryFormValues>({
-    resolver: zodResolver(categoryFormSchema),
-    defaultValues: {
-      name: "",
-      slug: "",
-      status: "Active",
-      image: ""
-    },
-  });
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        form.setValue("image", reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const handleCreateCategory = (values: CategoryFormValues) => {
     const newCategory: Category = {
       id: categories.length > 0 ? Math.max(...categories.map(c => c.id)) + 1 : 1,
@@ -184,7 +104,6 @@ export default function Categories() {
     
     setCategories([...categories, newCategory]);
     setIsCreateDialogOpen(false);
-    form.reset();
     
     toast({
       title: "Category created",
@@ -203,7 +122,6 @@ export default function Categories() {
     
     setCategories(updatedCategories);
     setIsUpdateDialogOpen(false);
-    form.reset();
     
     toast({
       title: "Category updated",
@@ -227,12 +145,6 @@ export default function Categories() {
 
   const openUpdateDialog = (category: Category) => {
     setSelectedCategory(category);
-    form.reset({
-      name: category.name,
-      slug: category.slug,
-      status: category.status,
-      image: category.image
-    });
     setIsUpdateDialogOpen(true);
   };
 
@@ -250,10 +162,10 @@ export default function Categories() {
             Manage your product categories
           </p>
         </div>
-        <Button className="flex items-center gap-2" onClick={() => {
-          form.reset({name: "", slug: "", status: "Active", image: ""});
-          setIsCreateDialogOpen(true);
-        }}>
+        <Button 
+          className="flex items-center gap-2" 
+          onClick={() => setIsCreateDialogOpen(true)}
+        >
           <Plus className="h-4 w-4" />
           <span>Add Category</span>
         </Button>
@@ -268,84 +180,13 @@ export default function Categories() {
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-2 mb-4">
-            <div className="relative max-w-sm">
-              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                placeholder="Search categories..." 
-                className="pl-8"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
+            <CategorySearch value={searchTerm} onChange={setSearchTerm} />
           </div>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[80px]">ID</TableHead>
-                  <TableHead>Image</TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Slug</TableHead>
-                  <TableHead className="text-center">Products</TableHead>
-                  <TableHead className="text-center">Subcategories</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredCategories.map(category => (
-                  <TableRow key={category.id}>
-                    <TableCell className="font-medium">#{category.id}</TableCell>
-                    <TableCell>
-                      {category.image ? (
-                        <img 
-                          src={category.image} 
-                          alt={category.name}
-                          className="h-10 w-10 rounded-md object-cover"
-                        />
-                      ) : (
-                        <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
-                          <FolderOpen className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="flex items-center gap-2">
-                      <FolderOpen className="h-5 w-5 text-muted-foreground" />
-                      {category.name}
-                    </TableCell>
-                    <TableCell>{category.slug}</TableCell>
-                    <TableCell className="text-center">{category.products}</TableCell>
-                    <TableCell className="text-center">{category.subcategories}</TableCell>
-                    <TableCell>
-                      <Badge variant={category.status === "Active" ? "default" : "secondary"}>
-                        {category.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => openUpdateDialog(category)}
-                        >
-                          <Edit className="h-4 w-4" />
-                          <span className="sr-only">Edit</span>
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          onClick={() => openDeleteDialog(category)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                          <span className="sr-only">Delete</span>
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+          <CategoriesTable 
+            categories={filteredCategories}
+            onEdit={openUpdateDialog}
+            onDelete={openDeleteDialog}
+          />
         </CardContent>
       </Card>
 
@@ -357,90 +198,7 @@ export default function Categories() {
               Create a new product category.
             </DialogDescription>
           </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleCreateCategory)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter category name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="slug"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Slug</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter slug" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <FormControl>
-                      <select
-                        className="w-full p-2 border rounded-md"
-                        {...field}
-                      >
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="image"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category Image</FormLabel>
-                    <FormControl>
-                      <div className="space-y-4">
-                        {field.value && (
-                          <div className="relative w-full aspect-video rounded-lg overflow-hidden">
-                            <img
-                              src={field.value}
-                              alt="Preview"
-                              className="object-cover w-full h-full"
-                            />
-                          </div>
-                        )}
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="cursor-pointer"
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="outline">Cancel</Button>
-                </DialogClose>
-                <Button type="submit">Create Category</Button>
-              </DialogFooter>
-            </form>
-          </Form>
+          <CategoryForm onSubmit={handleCreateCategory} />
         </DialogContent>
       </Dialog>
 
@@ -452,90 +210,17 @@ export default function Categories() {
               Update category details.
             </DialogDescription>
           </DialogHeader>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleUpdateCategory)} className="space-y-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter category name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="slug"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Slug</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Enter slug" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="status"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Status</FormLabel>
-                    <FormControl>
-                      <select
-                        className="w-full p-2 border rounded-md"
-                        {...field}
-                      >
-                        <option value="Active">Active</option>
-                        <option value="Inactive">Inactive</option>
-                      </select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="image"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category Image</FormLabel>
-                    <FormControl>
-                      <div className="space-y-4">
-                        {field.value && (
-                          <div className="relative w-full aspect-video rounded-lg overflow-hidden">
-                            <img
-                              src={field.value}
-                              alt="Preview"
-                              className="object-cover w-full h-full"
-                            />
-                          </div>
-                        )}
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="cursor-pointer"
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <DialogFooter>
-                <DialogClose asChild>
-                  <Button variant="outline">Cancel</Button>
-                </DialogClose>
-                <Button type="submit">Update Category</Button>
-              </DialogFooter>
-            </form>
-          </Form>
+          {selectedCategory && (
+            <CategoryForm 
+              initialValues={{
+                name: selectedCategory.name,
+                slug: selectedCategory.slug,
+                status: selectedCategory.status,
+                image: selectedCategory.image
+              }} 
+              onSubmit={handleUpdateCategory}
+            />
+          )}
         </DialogContent>
       </Dialog>
 
