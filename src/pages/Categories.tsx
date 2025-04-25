@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { 
   Table, 
@@ -51,16 +50,15 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Plus, Edit, Trash2, FolderOpen, Search } from "lucide-react";
 
-// Define form schema
 const categoryFormSchema = z.object({
   name: z.string().min(2, "Category name must be at least 2 characters"),
   slug: z.string().min(2, "Slug must be at least 2 characters"),
-  status: z.enum(["Active", "Inactive"])
+  status: z.enum(["Active", "Inactive"]),
+  image: z.string().optional()
 });
 
 type CategoryFormValues = z.infer<typeof categoryFormSchema>;
 
-// Category type definition
 interface Category {
   id: number;
   name: string;
@@ -68,6 +66,7 @@ interface Category {
   products: number;
   subcategories: number;
   status: "Active" | "Inactive";
+  image: string;
 }
 
 const initialCategories: Category[] = [
@@ -77,7 +76,8 @@ const initialCategories: Category[] = [
     slug: "electronics",
     products: 124,
     subcategories: 8,
-    status: "Active"
+    status: "Active",
+    image: "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
   },
   {
     id: 2,
@@ -85,7 +85,8 @@ const initialCategories: Category[] = [
     slug: "clothing",
     products: 89,
     subcategories: 12,
-    status: "Active"
+    status: "Active",
+    image: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.0.3"
   },
   {
     id: 3,
@@ -144,17 +145,27 @@ export default function Categories() {
       )
     : categories;
 
-  // Form for creating and updating categories
   const form = useForm<CategoryFormValues>({
     resolver: zodResolver(categoryFormSchema),
     defaultValues: {
       name: "",
       slug: "",
-      status: "Active"
+      status: "Active",
+      image: ""
     },
   });
 
-  // Handle category creation
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        form.setValue("image", reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleCreateCategory = (values: CategoryFormValues) => {
     const newCategory: Category = {
       id: categories.length > 0 ? Math.max(...categories.map(c => c.id)) + 1 : 1,
@@ -162,7 +173,8 @@ export default function Categories() {
       slug: values.slug,
       products: 0,
       subcategories: 0,
-      status: values.status
+      status: values.status,
+      image: values.image || ""
     };
     
     setCategories([...categories, newCategory]);
@@ -175,13 +187,12 @@ export default function Categories() {
     });
   };
 
-  // Handle category update
   const handleUpdateCategory = (values: CategoryFormValues) => {
     if (!selectedCategory) return;
     
     const updatedCategories = categories.map(category => 
       category.id === selectedCategory.id 
-        ? { ...category, name: values.name, slug: values.slug, status: values.status }
+        ? { ...category, name: values.name, slug: values.slug, status: values.status, image: values.image }
         : category
     );
     
@@ -195,7 +206,6 @@ export default function Categories() {
     });
   };
 
-  // Handle category deletion
   const handleDeleteCategory = () => {
     if (!selectedCategory) return;
     
@@ -210,18 +220,17 @@ export default function Categories() {
     });
   };
 
-  // Open update dialog and populate form
   const openUpdateDialog = (category: Category) => {
     setSelectedCategory(category);
     form.reset({
       name: category.name,
       slug: category.slug,
-      status: category.status
+      status: category.status,
+      image: category.image
     });
     setIsUpdateDialogOpen(true);
   };
 
-  // Open delete dialog
   const openDeleteDialog = (category: Category) => {
     setSelectedCategory(category);
     setIsDeleteDialogOpen(true);
@@ -237,7 +246,7 @@ export default function Categories() {
           </p>
         </div>
         <Button className="flex items-center gap-2" onClick={() => {
-          form.reset({name: "", slug: "", status: "Active"});
+          form.reset({name: "", slug: "", status: "Active", image: ""});
           setIsCreateDialogOpen(true);
         }}>
           <Plus className="h-4 w-4" />
@@ -269,6 +278,7 @@ export default function Categories() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-[80px]">ID</TableHead>
+                  <TableHead>Image</TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Slug</TableHead>
                   <TableHead className="text-center">Products</TableHead>
@@ -281,6 +291,19 @@ export default function Categories() {
                 {filteredCategories.map(category => (
                   <TableRow key={category.id}>
                     <TableCell className="font-medium">#{category.id}</TableCell>
+                    <TableCell>
+                      {category.image ? (
+                        <img 
+                          src={category.image} 
+                          alt={category.name}
+                          className="h-10 w-10 rounded-md object-cover"
+                        />
+                      ) : (
+                        <div className="h-10 w-10 rounded-md bg-muted flex items-center justify-center">
+                          <FolderOpen className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                    </TableCell>
                     <TableCell className="flex items-center gap-2">
                       <FolderOpen className="h-5 w-5 text-muted-foreground" />
                       {category.name}
@@ -321,7 +344,6 @@ export default function Categories() {
         </CardContent>
       </Card>
 
-      {/* Create Category Dialog */}
       <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -377,6 +399,35 @@ export default function Categories() {
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="image"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category Image</FormLabel>
+                    <FormControl>
+                      <div className="space-y-4">
+                        {field.value && (
+                          <div className="relative w-full aspect-video rounded-lg overflow-hidden">
+                            <img
+                              src={field.value}
+                              alt="Preview"
+                              className="object-cover w-full h-full"
+                            />
+                          </div>
+                        )}
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="cursor-pointer"
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <DialogFooter>
                 <DialogClose asChild>
                   <Button variant="outline">Cancel</Button>
@@ -388,7 +439,6 @@ export default function Categories() {
         </DialogContent>
       </Dialog>
 
-      {/* Update Category Dialog */}
       <Dialog open={isUpdateDialogOpen} onOpenChange={setIsUpdateDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -444,6 +494,35 @@ export default function Categories() {
                   </FormItem>
                 )}
               />
+              <FormField
+                control={form.control}
+                name="image"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Category Image</FormLabel>
+                    <FormControl>
+                      <div className="space-y-4">
+                        {field.value && (
+                          <div className="relative w-full aspect-video rounded-lg overflow-hidden">
+                            <img
+                              src={field.value}
+                              alt="Preview"
+                              className="object-cover w-full h-full"
+                            />
+                          </div>
+                        )}
+                        <Input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleImageUpload}
+                          className="cursor-pointer"
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <DialogFooter>
                 <DialogClose asChild>
                   <Button variant="outline">Cancel</Button>
@@ -455,7 +534,6 @@ export default function Categories() {
         </DialogContent>
       </Dialog>
 
-      {/* Delete Category Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
