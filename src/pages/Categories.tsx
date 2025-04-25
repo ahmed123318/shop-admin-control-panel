@@ -94,7 +94,8 @@ const initialCategories: Category[] = [
     slug: "home-garden",
     products: 76,
     subcategories: 15,
-    status: "Active"
+    status: "Active",
+    image: ""
   },
   {
     id: 4,
@@ -102,7 +103,8 @@ const initialCategories: Category[] = [
     slug: "beauty",
     products: 52,
     subcategories: 6,
-    status: "Active"
+    status: "Active",
+    image: ""
   },
   {
     id: 5,
@@ -110,7 +112,8 @@ const initialCategories: Category[] = [
     slug: "sports",
     products: 43,
     subcategories: 9,
-    status: "Active"
+    status: "Active",
+    image: ""
   },
   {
     id: 6,
@@ -118,7 +121,8 @@ const initialCategories: Category[] = [
     slug: "books",
     products: 67,
     subcategories: 5,
-    status: "Active"
+    status: "Active",
+    image: ""
   },
   {
     id: 7,
@@ -126,7 +130,8 @@ const initialCategories: Category[] = [
     slug: "toys",
     products: 31,
     subcategories: 4,
-    status: "Inactive"
+    status: "Inactive",
+    image: ""
   }
 ];
 

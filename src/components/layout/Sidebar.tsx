@@ -1,3 +1,4 @@
+
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import {
@@ -9,8 +10,7 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarTrigger,
+  SidebarMenuButton
 } from "@/components/ui/sidebar";
 import {
   LayoutDashboard,
@@ -120,7 +120,7 @@ export default function AdminSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="px-2 py-1">Main Menu</SidebarGroupLabel>
+          <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.slice(0, 5).map((item) => (
@@ -144,7 +144,7 @@ export default function AdminSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="px-2 py-1">Sales & Customers</SidebarGroupLabel>
+          <SidebarGroupLabel>Sales & Customers</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.slice(5, 8).map((item) => (
@@ -168,7 +168,7 @@ export default function AdminSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="px-2 py-1">Marketing & Finance</SidebarGroupLabel>
+          <SidebarGroupLabel>Marketing & Finance</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.slice(8, 12).map((item) => (
@@ -192,7 +192,7 @@ export default function AdminSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="px-2 py-1">System</SidebarGroupLabel>
+          <SidebarGroupLabel>System</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.slice(12).map((item) => (

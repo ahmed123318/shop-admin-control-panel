@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { fetchUsers } from "@/services/api";
@@ -126,15 +127,22 @@ const initialUsers: User[] = [
 
 export default function Users() {
   const [searchTerm, setSearchTerm] = useState("");
-  const { data: users = [], isLoading, error } = useQuery({
+  const [localUsers, setLocalUsers] = useState<User[]>([]);
+  const { data: fetchedUsers = [], isLoading, error } = useQuery({
     queryKey: ['users'],
     queryFn: fetchUsers,
+    onSuccess: (data) => {
+      setLocalUsers(data);
+    }
   });
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const { toast } = useToast();
+
+  // Use localUsers which can be modified after fetching
+  const users = localUsers.length > 0 ? localUsers : fetchedUsers;
 
   // Filter users based on search term
   const filteredUsers = searchTerm 
@@ -182,7 +190,7 @@ export default function Users() {
       registered: new Date().toISOString().split('T')[0]
     };
     
-    setUsers([...users, newUser]);
+    setLocalUsers([...users, newUser]);
     setIsCreateDialogOpen(false);
     form.reset();
     
@@ -202,7 +210,7 @@ export default function Users() {
         : user
     );
     
-    setUsers(updatedUsers);
+    setLocalUsers(updatedUsers);
     setIsUpdateDialogOpen(false);
     form.reset();
     
@@ -217,7 +225,7 @@ export default function Users() {
     if (!selectedUser) return;
     
     const updatedUsers = users.filter(user => user.id !== selectedUser.id);
-    setUsers(updatedUsers);
+    setLocalUsers(updatedUsers);
     setIsDeleteDialogOpen(false);
     
     toast({
