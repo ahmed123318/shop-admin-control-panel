@@ -123,7 +123,12 @@ export function SidebarHeader({ className, children }: SidebarHeaderProps) {
   );
 }
 
-export function SidebarGroup({ children, className }: { children?: React.ReactNode, className?: string }) {
+interface SidebarGroupProps {
+  children?: React.ReactNode;
+  className?: string;
+}
+
+export function SidebarGroup({ children, className }: SidebarGroupProps) {
   return (
     <div className={cn("mb-4", className)}>
       {children}
@@ -131,7 +136,12 @@ export function SidebarGroup({ children, className }: { children?: React.ReactNo
   );
 }
 
-export function SidebarGroupLabel({ children, className }: { children: React.ReactNode, className?: string }) {
+interface SidebarGroupLabelProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function SidebarGroupLabel({ children, className }: SidebarGroupLabelProps) {
   return (
     <div className={cn("mb-2 px-2 py-1 text-xs uppercase font-semibold text-muted-foreground", className)}>
       {children}
@@ -139,7 +149,12 @@ export function SidebarGroupLabel({ children, className }: { children: React.Rea
   );
 }
 
-export function SidebarGroupContent({ children, className }: { children: React.ReactNode, className?: string }) {
+interface SidebarGroupContentProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function SidebarGroupContent({ children, className }: SidebarGroupContentProps) {
   return (
     <div className={cn("space-y-1", className)}>
       {children}
@@ -147,7 +162,12 @@ export function SidebarGroupContent({ children, className }: { children: React.R
   );
 }
 
-export function SidebarMenu({ children, className }: { children: React.ReactNode, className?: string }) {
+interface SidebarMenuProps {
+  children: React.ReactNode;
+  className?: string;
+}
+
+export function SidebarMenu({ children, className }: SidebarMenuProps) {
   return (
     <nav className={cn("flex flex-col gap-1", className)}>
       {children}
@@ -155,12 +175,14 @@ export function SidebarMenu({ children, className }: { children: React.ReactNode
   );
 }
 
-export function SidebarMenuItem({ children, href, label, active }: { 
-  children?: React.ReactNode,
-  href?: string,
-  label?: string,
-  active?: boolean
-}) {
+interface SidebarMenuItemProps {
+  children: React.ReactNode;
+  href?: string;
+  label?: string;
+  active?: boolean;
+}
+
+export function SidebarMenuItem({ children, href, label, active }: SidebarMenuItemProps) {
   if (children) {
     return <div className="px-2">{children}</div>;
   }
@@ -174,15 +196,17 @@ export function SidebarMenuItem({ children, href, label, active }: {
   );
 }
 
+interface SidebarMenuButtonProps {
+  children: React.ReactNode;
+  asChild?: boolean;
+  className?: string;
+}
+
 export function SidebarMenuButton({ 
   children, 
   asChild, 
   className 
-}: { 
-  children: React.ReactNode, 
-  asChild?: boolean,
-  className?: string
-}) {
+}: SidebarMenuButtonProps) {
   const Comp = asChild ? React.Fragment : Button;
   const props = asChild ? {} : { variant: "ghost", className: cn("w-full justify-start", className) };
   
